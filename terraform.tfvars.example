@@ -1,0 +1,88 @@
+# AWS Credentials (Optional - can use AWS CLI credentials instead)
+# aws_access_key_id     = "YOUR_ACCESS_KEY"
+# aws_secret_access_key = "YOUR_SECRET_KEY"
+
+# Region Configuration
+aws_region = "ap-northeast-2"
+
+# VPC Configuration
+vpc_cidr             = "10.230.0.0/16"
+enable_dns_support   = true
+enable_dns_hostnames = true
+
+# Subnet Configuration
+public_subnet_cidr_2a  = "10.230.4.0/24"
+private_subnet_cidr_2a = "10.230.1.0/24"
+private_subnet_cidr_2c = "10.230.2.0/24"
+
+# EKS Configuration
+eks_cluster_name = "terraform-eks-cluster"
+
+# Environment and Project
+environment  = "dev"
+project_name = "PI"
+
+# Common Tags
+common_tags = {
+  Project     = "PlanIt"
+  Environment = "DEV"
+  ManagedBy   = "Terraform"
+}
+
+# EC2 Configuration (Optional)
+create_bastion_instance = false
+bastion_ami             = "ami-056a29f2eddc40520"
+bastion_instance_type   = "t2.micro"
+bastion_private_ip      = "10.230.4.240"
+bastion_volume_size     = 8
+ec2_key_name            = ""
+
+# Route53 Configuration (Optional)
+create_route53_zone = false
+domain_name         = ""
+
+# ACM Configuration (Optional)
+create_acm_certificate = false
+
+# S3 Configuration (Optional)
+create_s3_bucket     = false
+s3_bucket_name       = ""
+enable_s3_versioning = false
+enable_s3_encryption = true
+
+# ============================================
+# EKS Cluster Configuration (Optional)
+# ============================================
+create_eks_cluster = false
+
+# EKS Cluster Settings
+eks_cluster_version         = "1.28"
+eks_endpoint_private_access = true
+eks_endpoint_public_access  = true
+eks_public_access_cidrs     = ["0.0.0.0/0"]
+eks_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+enable_eks_cloudwatch_logs  = true
+
+# EKS Node Group Settings (for 5 microservices)
+# User-svc, Schedule-svc, Strategy-svc, Insight-svc, InsightAI-svc
+eks_node_desired_size      = 3
+eks_node_max_size          = 6
+eks_node_min_size          = 2
+eks_node_max_unavailable   = 1
+eks_node_instance_types    = ["t3.medium"]
+eks_node_capacity_type     = "ON_DEMAND"
+eks_node_disk_size         = 20
+eks_node_ssh_key           = ""
+eks_node_ssh_source_sg_ids = []
+eks_node_labels            = {}
+eks_node_taints            = []
+
+# EKS Add-ons
+enable_vpc_cni_addon      = true
+enable_coredns_addon      = true
+enable_kube_proxy_addon   = true
+enable_ebs_csi_driver     = true
+
+# Advanced Configuration
+use_custom_launch_template = false
+enable_detailed_monitoring = false
