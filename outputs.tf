@@ -14,6 +14,10 @@ output "eks_cluster_endpoint" {
   value = module.eks.cluster_endpoint
 }
 
+output "external_dns_role_arn" {
+  value = module.eks.external_dns_role_arn
+}
+
 output "alb_sg_id" {
   value = module.security.alb_sg_id
 }

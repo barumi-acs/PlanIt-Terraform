@@ -139,9 +139,9 @@ resource "aws_eks_node_group" "this" {
 }
 
 resource "aws_eks_access_entry" "bastion" {
-  cluster_name      = aws_eks_cluster.this.name
-  principal_arn     = var.bastion_role_arn
-  type              = "STANDARD"
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = var.bastion_role_arn
+  type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "bastion_admin" {
@@ -204,9 +204,9 @@ data "aws_iam_policy_document" "lbc_assume_role" {
 
 data "aws_iam_policy_document" "lbc" {
   statement {
-    sid     = "AllowServiceLinkedRole"
-    effect  = "Allow"
-    actions = ["iam:CreateServiceLinkedRole"]
+    sid       = "AllowServiceLinkedRole"
+    effect    = "Allow"
+    actions   = ["iam:CreateServiceLinkedRole"]
     resources = ["*"]
     condition {
       test     = "StringEquals"
@@ -296,9 +296,9 @@ data "aws_iam_policy_document" "lbc" {
   }
 
   statement {
-    sid     = "AllowEC2CreateTagsOnSGCreate"
-    effect  = "Allow"
-    actions = ["ec2:CreateTags"]
+    sid       = "AllowEC2CreateTagsOnSGCreate"
+    effect    = "Allow"
+    actions   = ["ec2:CreateTags"]
     resources = ["arn:aws:ec2:*:*:security-group/*"]
     condition {
       test     = "StringEquals"
@@ -313,9 +313,9 @@ data "aws_iam_policy_document" "lbc" {
   }
 
   statement {
-    sid     = "AllowEC2TagsOnClusterSG"
-    effect  = "Allow"
-    actions = ["ec2:CreateTags", "ec2:DeleteTags"]
+    sid       = "AllowEC2TagsOnClusterSG"
+    effect    = "Allow"
+    actions   = ["ec2:CreateTags", "ec2:DeleteTags"]
     resources = ["arn:aws:ec2:*:*:security-group/*"]
     condition {
       test     = "Null"
@@ -498,4 +498,73 @@ resource "aws_iam_role" "lbc" {
 resource "aws_iam_role_policy_attachment" "lbc" {
   role       = aws_iam_role.lbc.name
   policy_arn = aws_iam_policy.lbc.arn
+}
+
+data "aws_iam_policy_document" "external_dns_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:sub"
+      values   = ["system:serviceaccount:kube-system:external-dns"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "external_dns" {
+  statement {
+    sid    = "AllowChangeRecordSets"
+    effect = "Allow"
+    actions = [
+      "route53:ChangeResourceRecordSets",
+    ]
+    resources = ["arn:aws:route53:::hostedzone/*"]
+  }
+
+  statement {
+    sid    = "AllowReadRoute53"
+    effect = "Allow"
+    actions = [
+      "route53:ListHostedZones",
+      "route53:ListResourceRecordSets",
+      "route53:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "external_dns" {
+  name   = "${var.project_name}-ExternalDNS-Policy"
+  policy = data.aws_iam_policy_document.external_dns.json
+
+  tags = {
+    Name = "${var.project_name}-ExternalDNS-Policy"
+  }
+}
+
+resource "aws_iam_role" "external_dns" {
+  name               = "${var.project_name}-ExternalDNS-Role"
+  assume_role_policy = data.aws_iam_policy_document.external_dns_assume_role.json
+
+  tags = {
+    Name = "${var.project_name}-ExternalDNS-Role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "external_dns" {
+  role       = aws_iam_role.external_dns.name
+  policy_arn = aws_iam_policy.external_dns.arn
 }

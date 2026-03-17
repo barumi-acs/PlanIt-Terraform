@@ -17,3 +17,7 @@ output "node_group_name" {
 output "lbc_role_arn" {
   value = aws_iam_role.lbc.arn
 }
+
+output "external_dns_role_arn" {
+  value = aws_iam_role.external_dns.arn
+}

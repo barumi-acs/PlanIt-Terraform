@@ -150,3 +150,57 @@ resource "terraform_data" "install_lbc" {
 
   depends_on = [module.eks, module.bastion]
 }
+
+resource "terraform_data" "install_external_dns" {
+  triggers_replace = {
+    cluster_name     = module.eks.cluster_name
+    external_dns_arn = module.eks.external_dns_role_arn
+    domain_filters   = jsonencode(var.external_dns_domain_filters)
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "which helm 2>/dev/null || curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash",
+      "helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/ 2>/dev/null || true",
+      "helm repo update external-dns",
+      join("\n", concat(
+        [
+          "cat >/tmp/external-dns-values.yaml <<'YAML'",
+          "provider:",
+          "  name: aws",
+          "policy: sync",
+          "registry: txt",
+          "txtOwnerId: ${module.eks.cluster_name}",
+          "sources:",
+          "  - service",
+          "  - ingress",
+          "domainFilters:",
+        ],
+        [for domain in var.external_dns_domain_filters : "  - ${domain}"],
+        [
+          "env:",
+          "  - name: AWS_DEFAULT_REGION",
+          "    value: ${var.aws_region}",
+          "serviceAccount:",
+          "  create: true",
+          "  name: external-dns",
+          "  annotations:",
+          "    eks.amazonaws.com/role-arn: ${module.eks.external_dns_role_arn}",
+          "YAML",
+        ]
+      )),
+      "helm upgrade --install external-dns external-dns/external-dns -n kube-system -f /tmp/external-dns-values.yaml --version 1.14.3 --wait --timeout 5m0s",
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, terraform_data.install_lbc]
+}

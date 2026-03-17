@@ -156,6 +156,17 @@ variable "dynamodb_table_name" {
   default     = "PI-DEV-Insight-Dynamo"
 }
 
+variable "external_dns_domain_filters" {
+  description = "Route 53 public domains managed by ExternalDNS"
+  type        = list(string)
+  default     = ["barumi-planit.store"]
+
+  validation {
+    condition     = length(var.external_dns_domain_filters) > 0 && alltrue([for domain in var.external_dns_domain_filters : length(trimspace(domain)) > 0])
+    error_message = "external_dns_domain_filters must contain at least one non-empty domain."
+  }
+}
+
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)

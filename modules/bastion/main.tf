@@ -75,7 +75,7 @@ resource "aws_instance" "this" {
   iam_instance_profile        = aws_iam_instance_profile.bastion.name
   user_data_replace_on_change = true
 
-user_data = <<-EOF
+  user_data = <<-EOF
 #!/bin/bash
   set -euxo pipefail
 

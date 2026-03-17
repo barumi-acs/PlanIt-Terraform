@@ -13,6 +13,7 @@
 - ALB는 Terraform으로 선생성하지 않고, EKS Ingress(aws-load-balancer-controller)에서 생성
 - 필요 시 Ingress annotation에서 `alb_sg_id` 출력값을 ALB SG로 지정 가능
 - EKS Cluster + Managed Node Group (`t3.micro`, AL2023)
+- AWS Load Balancer Controller와 ExternalDNS는 Bastion에서 Helm으로 설치
 - RDS MariaDB Multi-AZ
 - S3 Bucket (Public Access 허용)
 
@@ -36,3 +37,4 @@
 - S3 버킷 이름은 글로벌 유니크여야 합니다.
 - MariaDB `10.11.9` 버전은 리전 가용성에 따라 실패할 수 있으니 필요 시 `db_engine_version`을 조정하세요.
 - EKS 버전도 시점/리전에 따라 변경이 필요할 수 있습니다.
+- ExternalDNS는 `external_dns_domain_filters`에 지정한 도메인만 Route 53에서 관리합니다.
