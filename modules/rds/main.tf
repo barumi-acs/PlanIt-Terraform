@@ -18,6 +18,56 @@ resource "aws_db_parameter_group" "this" {
     apply_method = "immediate"
   }
 
+  # UTF-8 문자셋 설정 (한글 지원)
+  parameter {
+    name         = "character_set_server"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_client"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_connection"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_database"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_results"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "collation_server"
+    value        = "utf8mb4_unicode_ci"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "collation_connection"
+    value        = "utf8mb4_unicode_ci"
+    apply_method = "immediate"
+  }
+
+  # 타임존 설정 (Asia/Seoul)
+  parameter {
+    name         = "time_zone"
+    value        = "Asia/Seoul"
+    apply_method = "immediate"
+  }
+
   tags = {
     Name = "${var.project_name}-MariaDB-Params"
   }
