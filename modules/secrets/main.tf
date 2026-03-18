@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "secrets_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "${var.oidc_issuer}:sub"
-      values   = ["system:serviceaccount:planit-dev:planit-app-sa"]
+      values   = ["system:serviceaccount:${var.k8s_namespace}:planit-app-sa"]
     }
 
     condition {
