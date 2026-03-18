@@ -19,7 +19,7 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   description = "EKS Kubernetes version"
   type        = string
-  default     = "1.30"
+  default     = "1.33"
 }
 
 variable "vpc_cidr" {
@@ -89,7 +89,7 @@ variable "node_desired_size" {
 variable "node_min_size" {
   description = "Minimum EKS node count"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "node_max_size" {
@@ -153,7 +153,51 @@ variable "s3_bucket_name" {
 variable "dynamodb_table_name" {
   description = "DynamoDB table name"
   type        = string
-  default     = "PI-DEV-Insight-Dynamo"
+  default     = "ai_reports"
+}
+
+variable "redis_engine_version" {
+  description = "Redis engine version"
+  type        = string
+  default     = "7.1"
+}
+
+variable "redis_node_type" {
+  description = "Redis node instance type"
+  type        = string
+  default     = "cache.t3.micro"
+}
+
+variable "redis_num_cache_nodes" {
+  description = "Number of Redis cache nodes (1 for single node, 2+ for cluster with failover)"
+  type        = number
+  default     = 2
+}
+
+variable "cognito_user_pool_id" {
+  description = "기존 Cognito User Pool ID"
+  type        = string
+}
+
+variable "cognito_client_id" {
+  description = "기존 Cognito Client ID"
+  type        = string
+}
+
+variable "jwt_secret" {
+  description = "JWT secret key for all backend services"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.jwt_secret) >= 32
+    error_message = "jwt_secret must be at least 32 characters long for security."
+  }
+}
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for HTTPS (ALB Ingress)"
+  type        = string
 }
 
 variable "external_dns_domain_filters" {
@@ -165,6 +209,12 @@ variable "external_dns_domain_filters" {
     condition     = length(var.external_dns_domain_filters) > 0 && alltrue([for domain in var.external_dns_domain_filters : length(trimspace(domain)) > 0])
     error_message = "external_dns_domain_filters must contain at least one non-empty domain."
   }
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "dev"
 }
 
 variable "common_tags" {

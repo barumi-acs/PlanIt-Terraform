@@ -82,6 +82,17 @@ module "dynamodb" {
   table_name   = var.dynamodb_table_name
 }
 
+module "redis" {
+  source = "./modules/redis"
+
+  project_name            = var.project_name
+  subnet_ids              = [module.network.eks_private_subnet_2a_id, module.network.eks_private_subnet_2c_id]
+  redis_security_group_id = module.security.redis_sg_id
+  redis_engine_version    = var.redis_engine_version
+  redis_node_type         = var.redis_node_type
+  redis_num_cache_nodes   = var.redis_num_cache_nodes
+}
+
 resource "terraform_data" "init_planit_databases" {
   triggers_replace = {
     rds_endpoint = module.rds.endpoint
@@ -203,4 +214,189 @@ resource "terraform_data" "install_external_dns" {
   }
 
   depends_on = [module.eks, module.bastion, terraform_data.install_lbc]
+}
+
+resource "terraform_data" "create_cognito_secret" {
+  triggers_replace = {
+    user_pool_id = var.cognito_user_pool_id
+    client_id    = var.cognito_client_id
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "kubectl delete secret planit-cognito-config -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-cognito-config --from-literal=user-pool-id='${var.cognito_user_pool_id}' --from-literal=client-id='${var.cognito_client_id}' -n default",
+      "echo 'Cognito Secret 생성 완료'",
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, terraform_data.install_lbc]
+}
+
+resource "terraform_data" "create_jwt_secret" {
+  triggers_replace = {
+    jwt_secret = var.jwt_secret
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "kubectl delete secret planit-jwt-secret -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-jwt-secret --from-literal=secret='${var.jwt_secret}' -n default",
+      "echo 'JWT Secret 생성 완료'",
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, terraform_data.install_lbc]
+}
+
+resource "terraform_data" "create_redis_secret" {
+  triggers_replace = {
+    redis_endpoint = module.redis.redis_endpoint
+    redis_port     = tostring(module.redis.redis_port)
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "kubectl delete secret planit-redis-config -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-redis-config --from-literal=host='${module.redis.redis_endpoint}' --from-literal=port='${module.redis.redis_port}' -n default",
+      "echo 'Redis Config Secret 생성 완료'",
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, module.redis, terraform_data.install_lbc]
+}
+
+# RDS에 4개 DB 자동 생성
+resource "terraform_data" "create_databases" {
+  triggers_replace = {
+    rds_endpoint = module.rds.endpoint
+    db_password  = var.db_password
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '=== RDS에 4개 데이터베이스 생성 시작 ==='",
+
+      # MariaDB 클라이언트 설치 (없는 경우)
+      "sudo dnf install -y mariadb105 2>/dev/null || echo 'MariaDB client already installed'",
+
+      # 4개 DB 생성 (이미 존재하면 무시)
+      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_user_db;\"",
+      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_schedule_db;\"",
+      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_strategy_db;\"",
+      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_insight_db;\"",
+
+      # 확인
+      "echo '=== 생성된 데이터베이스 목록 ==='",
+      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"SHOW DATABASES;\" | grep planit",
+
+      "echo '=== RDS 데이터베이스 생성 완료 ==='",
+    ]
+  }
+
+  depends_on = [module.rds, module.bastion]
+}
+
+# Redis CLI 자동 설치
+resource "terraform_data" "install_redis_cli" {
+  triggers_replace = {
+    bastion_id = module.bastion.instance_id
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '=== Redis CLI 설치 시작 ==='",
+      "sudo dnf install -y redis6",
+      "echo '=== Redis CLI 설치 완료 ==='",
+      "/usr/bin/redis6-cli --version",
+    ]
+  }
+
+  depends_on = [module.bastion]
+}
+
+# Kubernetes DB Secrets 생성
+resource "terraform_data" "create_db_secret" {
+  triggers_replace = {
+    rds_endpoint = module.rds.endpoint
+    db_username  = var.db_username
+    db_password  = var.db_password
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+
+      # User Service DB Secret
+      "kubectl delete secret planit-user-db-credentials -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-user-db-credentials --from-literal=url='jdbc:mariadb://${module.rds.endpoint}/planit_user_db' --from-literal=username='${var.db_username}' --from-literal=password='${var.db_password}' -n default",
+
+      # Schedule Service DB Secret
+      "kubectl delete secret planit-schedule-db-credentials -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-schedule-db-credentials --from-literal=url='jdbc:mariadb://${module.rds.endpoint}/planit_schedule_db' --from-literal=username='${var.db_username}' --from-literal=password='${var.db_password}' -n default",
+
+      # Strategy Service DB Secret
+      "kubectl delete secret planit-strategy-db-credentials -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-strategy-db-credentials --from-literal=url='jdbc:mariadb://${module.rds.endpoint}/planit_strategy_db' --from-literal=username='${var.db_username}' --from-literal=password='${var.db_password}' -n default",
+
+      # Insight Service DB Secret
+      "kubectl delete secret planit-insight-db-credentials -n default --ignore-not-found=true",
+      "kubectl create secret generic planit-insight-db-credentials --from-literal=url='jdbc:mariadb://${module.rds.endpoint}/planit_insight_db' --from-literal=username='${var.db_username}' --from-literal=password='${var.db_password}' -n default",
+
+      "echo 'DB Secrets 생성 완료 (User, Schedule, Strategy, Insight)'",
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, module.rds, terraform_data.install_lbc, terraform_data.create_databases]
 }

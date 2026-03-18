@@ -21,3 +21,8 @@ output "lbc_role_arn" {
 output "external_dns_role_arn" {
   value = aws_iam_role.external_dns.arn
 }
+
+output "app_services_role_arn" {
+  description = "IAM Role ARN for application services (Strategy, InsightAI) to access Bedrock and DynamoDB"
+  value       = aws_iam_role.app_services.arn
+}

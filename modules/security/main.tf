@@ -52,6 +52,16 @@ resource "aws_security_group" "db" {
   }
 }
 
+resource "aws_security_group" "redis" {
+  name        = "${var.project_name}-Redis-PRI-SG"
+  description = "Redis private security group"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.project_name}-Redis-PRI-SG"
+  }
+}
+
 resource "aws_vpc_security_group_egress_rule" "bastion_all_out" {
   security_group_id = aws_security_group.bastion.id
   ip_protocol       = "-1"
@@ -82,6 +92,12 @@ resource "aws_vpc_security_group_egress_rule" "cluster_kubelet_to_node" {
 
 resource "aws_vpc_security_group_egress_rule" "db_all_out" {
   security_group_id = aws_security_group.db.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_egress_rule" "redis_all_out" {
+  security_group_id = aws_security_group.redis.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
@@ -228,4 +244,31 @@ resource "aws_vpc_security_group_ingress_rule" "node_webhook_from_cluster" {
   from_port                    = 9443
   to_port                      = 9443
   referenced_security_group_id = aws_security_group.cluster.id
+}
+
+# Node → Redis 접근 허용 (6379 포트)
+resource "aws_vpc_security_group_ingress_rule" "redis_from_node" {
+  security_group_id            = aws_security_group.redis.id
+  ip_protocol                  = "tcp"
+  from_port                    = 6379
+  to_port                      = 6379
+  referenced_security_group_id = aws_security_group.node.id
+}
+
+# Bastion → Redis 접근 허용 (관리 목적)
+resource "aws_vpc_security_group_ingress_rule" "redis_from_bastion" {
+  security_group_id            = aws_security_group.redis.id
+  ip_protocol                  = "tcp"
+  from_port                    = 6379
+  to_port                      = 6379
+  referenced_security_group_id = aws_security_group.bastion.id
+}
+
+# Redis ICMP from VPC
+resource "aws_vpc_security_group_ingress_rule" "redis_icmp_from_vpc" {
+  security_group_id = aws_security_group.redis.id
+  ip_protocol       = "icmp"
+  from_port         = -1
+  to_port           = -1
+  cidr_ipv4         = data.aws_vpc.selected.cidr_block
 }

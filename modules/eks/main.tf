@@ -568,3 +568,60 @@ resource "aws_iam_role_policy_attachment" "external_dns" {
   role       = aws_iam_role.external_dns.name
   policy_arn = aws_iam_policy.external_dns.arn
 }
+
+# ──────────────────────────────────────────────────────────
+# IRSA for Application Services (Strategy, InsightAI)
+# Bedrock + DynamoDB Access
+# ──────────────────────────────────────────────────────────
+
+data "aws_iam_policy_document" "app_services_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:sub"
+      values = [
+        "system:serviceaccount:planit:planit-user-sa",
+        "system:serviceaccount:planit:planit-strategy-sa",
+        "system:serviceaccount:planit:planit-insightai-sa"
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "app_services" {
+  name               = "${var.project_name}-App-Services-Role"
+  assume_role_policy = data.aws_iam_policy_document.app_services_assume_role.json
+
+  tags = {
+    Name = "${var.project_name}-App-Services-Role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "bedrock_access" {
+  role       = aws_iam_role.app_services.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "dynamodb_access" {
+  role       = aws_iam_role.app_services.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "cognito_access" {
+  role       = aws_iam_role.app_services.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonCognitoPowerUser"
+}
