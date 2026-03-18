@@ -184,6 +184,32 @@ variable "cognito_client_id" {
   type        = string
 }
 
+variable "cognito_client_secret" {
+  description = "Cognito App Client Secret (Secrets Manager에 저장)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID (Secrets Manager에 저장)"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key (Secrets Manager에 저장)"
+  type        = string
+  sensitive   = true
+}
+
+variable "gnews_api_key" {
+  description = "GNews API Key (Secrets Manager에 저장)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "jwt_secret" {
   description = "JWT secret key for all backend services"
   type        = string

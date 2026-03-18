@@ -37,3 +37,13 @@ output "dynamodb_table_name" {
 output "dynamodb_table_arn" {
   value = module.dynamodb.table_arn
 }
+
+output "secrets_irsa_role_arn" {
+  description = "IRSA Role ARN for Secrets Manager access (PlanIt-Yaml service-account.yaml에 사용)"
+  value       = module.secrets.irsa_role_arn
+}
+
+output "secrets_secret_name" {
+  description = "AWS Secrets Manager secret name"
+  value       = module.secrets.secret_name
+}

@@ -4,3 +4,5 @@
 *.lock.hcl
 environments/
 PI-DEV-key.pem
+terraform.tfvars
+*.tfvars

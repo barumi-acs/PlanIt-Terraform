@@ -14,5 +14,11 @@ cognito_client_id    = "6j5ajq8p3b7d894qt5msp4hair"
 # JWT Secret (최소 32자 이상 필수)
 jwt_secret = "planit-production-jwt-secret-key-change-this-to-secure-random-string-2024"
 
+# AWS Secrets Manager에 저장될 민감 정보
+aws_access_key_id     = "YOUR_AWS_ACCESS_KEY_ID"
+aws_secret_access_key = "YOUR_AWS_SECRET_ACCESS_KEY"
+cognito_client_secret = "YOUR_COGNITO_CLIENT_SECRET"
+gnews_api_key         = "YOUR_GNEWS_API_KEY"
+
 # ACM 인증서 ARN (HTTPS용)
 acm_certificate_arn = "arn:aws:acm:ap-northeast-2:935875533840:certificate/a047598e-c697-443d-a037-d051f2ef733e"

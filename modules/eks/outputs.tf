@@ -26,3 +26,13 @@ output "app_services_role_arn" {
   description = "IAM Role ARN for application services (Strategy, InsightAI) to access Bedrock and DynamoDB"
   value       = aws_iam_role.app_services.arn
 }
+
+output "oidc_provider_arn" {
+  description = "EKS OIDC provider ARN for IRSA"
+  value       = aws_iam_openid_connect_provider.eks.arn
+}
+
+output "oidc_issuer" {
+  description = "EKS OIDC issuer URL (without https://) for IRSA"
+  value       = local.oidc_issuer
+}
