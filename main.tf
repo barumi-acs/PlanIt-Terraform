@@ -314,3 +314,10 @@ module "s3_frontend" {
   bucket_name  = var.frontend_bucket_name
   project_name = var.project_name
 }
+
+module "cloudfront" {
+  source = "./modules/cloudfront"
+
+  bucket_domain_name = module.s3_frontend.bucket_regional_domain_name
+  project_name       = var.project_name
+}
