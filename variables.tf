@@ -260,7 +260,11 @@ variable "eks_node_instance_types" {
 variable "eks_node_capacity_type" {
   description = "Type of capacity (ON_DEMAND or SPOT)"
   type        = string
+<<<<<<< Updated upstream
   default     = "ON_DEMAND"
+=======
+  default     = "pi-dev-bareunbaleum-s3-yeji-0317"
+>>>>>>> Stashed changes
 }
 
 variable "eks_node_disk_size" {
@@ -278,7 +282,16 @@ variable "eks_node_ssh_key" {
 variable "eks_node_ssh_source_sg_ids" {
   description = "Security group IDs allowed to SSH to nodes"
   type        = list(string)
+<<<<<<< Updated upstream
   default     = []
+=======
+  default     = ["8b5.shop"]
+
+  validation {
+    condition     = length(var.external_dns_domain_filters) > 0 && alltrue([for domain in var.external_dns_domain_filters : length(trimspace(domain)) > 0])
+    error_message = "external_dns_domain_filters must contain at least one non-empty domain."
+  }
+>>>>>>> Stashed changes
 }
 
 variable "eks_node_labels" {
@@ -366,3 +379,76 @@ variable "ebs_csi_driver_addon_version" {
   type        = string
   default     = null
 }
+
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID for application services"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key for application services"
+  type        = string
+  sensitive   = true
+}
+
+variable "cognito_client_secret" {
+  description = "Cognito Client Secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "jwt_secret" {
+  description = "JWT Secret Key for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "gnews_api_key" {
+  description = "GNews API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "acm_certificate_arn" {
+  description = "ACM Certificate ARN for ALB HTTPS (required if create_acm_certificate is false)"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN for ALB authentication"
+  type        = string
+}
+
+variable "cognito_alb_client_id" {
+  description = "Cognito Client ID for ALB authentication"
+  type        = string
+}
+
+variable "cognito_domain" {
+  description = "Cognito domain for ALB authentication"
+  type        = string
+}
+
+variable "create_acm_certificate" {
+  description = "Whether to create ACM certificate with Terraform"
+  type        = bool
+  default     = false
+}
+
+variable "create_route53_zone" {
+  description = "Whether to create Route53 hosted zone"
+  type        = bool
+  default     = false
+}
+
+variable "route53_zone_id" {
+  description = "Existing Route53 hosted zone ID (if not creating new one)"
+  type        = string
+  default     = ""
+}
+
+

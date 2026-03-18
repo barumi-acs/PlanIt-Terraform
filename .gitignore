@@ -3,6 +3,7 @@
 
 # .tfstate files
 *.tfstate
+<<<<<<< Updated upstream
 *.tfstate.*
 
 # Crash log files
@@ -42,3 +43,10 @@ terraform.rc
 
 # Ignore log files
 *.log
+=======
+*.tfstate.backup
+*.lock.hcl
+environments/*.tfvars
+!environments/*.tfvars.example
+*.pem
+>>>>>>> Stashed changes

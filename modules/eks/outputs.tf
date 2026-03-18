@@ -48,6 +48,7 @@ output "cluster_iam_role_arn" {
   value       = var.create_eks_cluster ? aws_iam_role.eks_cluster[0].arn : null
 }
 
+<<<<<<< Updated upstream
 output "cluster_iam_role_name" {
   description = "The IAM role name used by the EKS cluster"
   value       = var.create_eks_cluster ? aws_iam_role.eks_cluster[0].name : null
@@ -106,3 +107,12 @@ output "kubeconfig_command" {
 # ============================================
 
 data "aws_region" "current" {}
+=======
+output "oidc_provider_arn" {
+  value = aws_iam_openid_connect_provider.eks.arn
+}
+
+output "oidc_issuer" {
+  value = local.oidc_issuer
+}
+>>>>>>> Stashed changes

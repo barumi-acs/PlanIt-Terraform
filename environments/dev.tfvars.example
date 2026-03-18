@@ -1,0 +1,37 @@
+# Dev Environment Configuration
+# Copy this to dev.tfvars and customize for your environment
+
+admin_cidr                  = "YOUR_IP_ADDRESS/32"  # Your IP for bastion access
+node_instance_types         = ["t3.medium"]
+node_desired_size           = 2
+node_min_size               = 1
+node_max_size               = 3
+
+# Database
+db_name          = "planit_user_db"
+db_instance_class = "db.t3.medium"
+
+# S3
+s3_bucket_name = "YOUR_S3_BUCKET_NAME"
+
+# DynamoDB
+dynamodb_table_name = "PI-DEV-Insight-Dynamo"
+
+# Domain
+external_dns_domain_filters = ["YOUR_DOMAIN.com"]
+
+# ===== ACM Certificate 설정 =====
+# Option 1: Terraform으로 ACM 생성 (권장)
+create_acm_certificate = true
+create_route53_zone    = false  # true면 새 Route53 Zone 생성
+route53_zone_id        = "YOUR_ROUTE53_ZONE_ID"  # 기존 Zone 사용 시
+
+# Option 2: 기존 ACM Certificate 사용
+# create_acm_certificate = false
+# acm_certificate_arn = "arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+
+# ===== Cognito for ALB Authentication =====
+cognito_user_pool_arn = "arn:aws:cognito-idp:REGION:ACCOUNT_ID:userpool/YOUR_POOL_ID"
+cognito_alb_client_id = "YOUR_COGNITO_ALB_CLIENT_ID"
+cognito_domain        = "YOUR_DOMAIN.auth.REGION.amazoncognito.com"
+

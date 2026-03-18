@@ -1,0 +1,119 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: planit-ingress
+  namespace: ${namespace}
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200-399"
+    alb.ingress.kubernetes.io/certificate-arn: "${certificate_arn}"
+    alb.ingress.kubernetes.io/auth-type: cognito
+    alb.ingress.kubernetes.io/auth-scope: "openid email phone"
+    alb.ingress.kubernetes.io/auth-session-timeout: "3600"
+    alb.ingress.kubernetes.io/auth-on-unauthenticated-request: authenticate
+    alb.ingress.kubernetes.io/auth-idp-cognito: '{"UserPoolArn":"${cognito_user_pool_arn}","UserPoolClientId":"${cognito_client_id}","UserPoolDomain":"${cognito_domain}"}'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: ${domain_name}
+      http:
+        paths:
+          # User Service
+          - path: /api/v1/users
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-user-svc
+                port:
+                  number: 8081
+
+          # Schedule Service
+          - path: /api/v1/schedules
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-schedule-svc
+                port:
+                  number: 8082
+
+          # Strategy Service
+          - path: /api/v1/strategy
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-strategy-svc
+                port:
+                  number: 8083
+          - path: /api/v1/categories
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-strategy-svc
+                port:
+                  number: 8083
+          - path: /api/v1/trends
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-strategy-svc
+                port:
+                  number: 8083
+
+          # AI endpoints (currently served by Strategy Service)
+          - path: /api/v1/ai
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-strategy-svc
+                port:
+                  number: 8083
+
+          # Insight Service
+          - path: /api/v1/insight
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-insight-svc
+                port:
+                  number: 8084
+          - path: /api/v1/feedbacks
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-insight-svc
+                port:
+                  number: 8084
+          - path: /api/v1/stats
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-insight-svc
+                port:
+                  number: 8084
+          - path: /api/v1/reports
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-insight-svc
+                port:
+                  number: 8084
+          - path: /api/v1/goals
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-insight-svc
+                port:
+                  number: 8084
+
+          # Frontend (React)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: planit-front-svc
+                port:
+                  number: 80

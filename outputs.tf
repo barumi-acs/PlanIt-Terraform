@@ -237,3 +237,26 @@ output "eks_kubeconfig_command" {
   description = "Command to configure kubectl for the EKS cluster"
   value       = module.eks.kubeconfig_command
 }
+
+output "secrets_manager_arn" {
+  value = module.secrets.secret_arn
+}
+
+output "secrets_irsa_role_arn" {
+  value = module.secrets.irsa_role_arn
+}
+
+output "acm_certificate_arn" {
+  description = "ACM Certificate ARN"
+  value       = local.acm_certificate_arn
+}
+
+output "route53_zone_id" {
+  description = "Route53 Hosted Zone ID"
+  value       = var.create_acm_certificate ? module.acm[0].route53_zone_id : var.route53_zone_id
+}
+
+output "route53_name_servers" {
+  description = "Route53 Name Servers (if zone was created)"
+  value       = var.create_acm_certificate && var.create_route53_zone ? module.acm[0].route53_name_servers : []
+}
