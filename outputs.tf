@@ -38,6 +38,16 @@ output "dynamodb_table_arn" {
   value = module.dynamodb.table_arn
 }
 
+output "redis_endpoint" {
+  description = "Redis primary endpoint address"
+  value       = module.redis.redis_endpoint
+}
+
+output "redis_port" {
+  description = "Redis port"
+  value       = module.redis.redis_port
+}
+
 output "secrets_irsa_role_arn" {
   description = "IRSA Role ARN for Secrets Manager access (PlanIt-Yaml service-account.yaml에 사용)"
   value       = module.secrets.irsa_role_arn

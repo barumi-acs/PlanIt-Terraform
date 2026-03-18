@@ -32,7 +32,7 @@ module "bastion" {
   source = "./modules/bastion"
 
   project_name              = var.project_name
-  public_subnet_id          = module.network.public_subnet_2a_id # 필요시 2c로도 배포 가능
+  public_subnet_id          = module.network.public_subnet_2a_id
   bastion_security_group_id = module.security.bastion_sg_id
 }
 
@@ -86,11 +86,15 @@ module "redis" {
   source = "./modules/redis"
 
   project_name            = var.project_name
-  subnet_ids              = [module.network.eks_private_subnet_2a_id, module.network.eks_private_subnet_2c_id]
+  subnet_ids              = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
   redis_security_group_id = module.security.redis_sg_id
   redis_engine_version    = var.redis_engine_version
   redis_node_type         = var.redis_node_type
   redis_num_cache_nodes   = var.redis_num_cache_nodes
+  #redis_parameter_group_name = var.redis_parameter_group_name
+  #snapshot_retention_limit   = var.redis_snapshot_retention_limit
+  #snapshot_window            = var.redis_snapshot_window
+  #maintenance_window         = var.redis_maintenance_window
 }
 
 resource "terraform_data" "init_planit_databases" {
@@ -303,3 +307,10 @@ resource "terraform_data" "install_redis_cli" {
 
 # Kubernetes DB Secrets는 AWS Secrets Manager → CSI Driver를 통해 자동 동기화됩니다.
 # PlanIt-Yaml/common/secret-provider-class.yaml 참고
+
+module "s3_frontend" {
+  source = "./modules/s3_frontend"
+
+  bucket_name  = var.frontend_bucket_name
+  project_name = var.project_name
+}

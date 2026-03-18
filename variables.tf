@@ -251,3 +251,8 @@ variable "common_tags" {
     Environment = "dev"
   }
 }
+
+variable "frontend_bucket_name" {
+  description = "S3 bucket name for frontend static files"
+  type        = string
+}
