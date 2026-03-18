@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: planit-insight-deploy
+  namespace: planit-dev
+  labels:
+    app: insight
+    tier: backend
+    env: dev
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: insight
+
+  template:
+    metadata:
+      labels:
+        app: insight
+        tier: backend
+        env: dev
+
+    spec:
+      containers:
+        - name: insight
+          image: 746491138596.dkr.ecr.ap-northeast-2.amazonaws.com/planit-insight:v2.0
+
+          ports:
+            - containerPort: 8084
+            - containerPort: 9094
+
+          envFrom:
+            - configMapRef:
+                name: planit-insight-config
+            - secretRef:
+                name: planit-insight-secret
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /app/logs
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/insight/actuator/health
+              port: 8084
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/insight/actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 5
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/insight/actuator/health
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 5
+
+      volumes:
+        - name: logs-volume
+          emptyDir: {}

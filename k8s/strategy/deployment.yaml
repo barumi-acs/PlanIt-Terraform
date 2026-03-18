@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: planit-strategy-deploy
+  namespace: planit-dev
+  labels:
+    app: strategy
+    tier: backend
+    env: dev
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: strategy
+
+  template:
+    metadata:
+      labels:
+        app: strategy
+        tier: backend
+        env: dev
+
+    spec:
+      containers:
+        - name: planit-strategy
+          image: 746491138596.dkr.ecr.ap-northeast-2.amazonaws.com/planit-strategy:v2.0
+
+          ports:
+            - containerPort: 8083
+            - containerPort: 9093
+
+          envFrom:
+            - configMapRef:
+                name: planit-strategy-config
+            - secretRef:
+                name: planit-strategy-secret
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /app/logs
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/strategy/actuator/health
+              port: 8083
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/strategy/actuator/health
+              port: 8083
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 5
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/strategy/actuator/health
+              port: 8083
+            initialDelaySeconds: 70
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 5
+
+      volumes:
+        - name: logs-volume
+          emptyDir: {}
