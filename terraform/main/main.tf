@@ -1,24 +1,6 @@
-data "aws_secretsmanager_secret" "planit" {
-  name = "planit_secrets"
-}
-
-data "aws_secretsmanager_secret_version" "planit" {
-  secret_id = data.aws_secretsmanager_secret.planit.id
-}
-
 locals {
   az_2a = "${var.aws_region}a"
   az_2c = "${var.aws_region}c"
-
-  planit_secrets_map = jsondecode(data.aws_secretsmanager_secret_version.planit.secret_string)
-
-  db_password           = local.planit_secrets_map["db_password"]
-  db_username           = local.planit_secrets_map["db_username"]
-  cognito_client_secret = local.planit_secrets_map["cognito_client_secret"]
-  aws_access_key_id     = local.planit_secrets_map["aws_access_key_id"]
-  aws_secret_access_key = local.planit_secrets_map["aws_secret_access_key"]
-  gnews_api_key         = local.planit_secrets_map["gnews_api_key"]
-  jwt_secret            = local.planit_secrets_map["jwt_secret"]
 }
 
 module "network" {
@@ -78,8 +60,8 @@ module "rds" {
 
   project_name         = var.project_name
   db_name              = var.db_name
-  db_username          = local.db_username
-  db_password          = local.db_password
+  db_username          = var.db_username
+  db_password          = var.db_password
   db_instance_class    = var.db_instance_class
   db_engine_version    = var.db_engine_version
   db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
@@ -115,22 +97,12 @@ module "redis" {
   #maintenance_window         = var.redis_maintenance_window
 }
 
-# AWS Secrets Manager에서 시크릿을 가져오는 data source
-
-data "aws_secretsmanager_secret" "planit_secrets" {
-  name = "planit-secrets-dev"
-}
-
-data "aws_secretsmanager_secret_version" "planit_secrets" {
-  secret_id = data.aws_secretsmanager_secret.planit_secrets.id
-}
-
 resource "terraform_data" "init_planit_databases" {
   triggers_replace = {
     rds_endpoint = module.rds.endpoint
     rds_port     = tostring(module.rds.port)
-    db_user      = local.db_username
-    db_password  = local.db_password
+    db_user      = var.db_username
+    db_password  = var.db_password
     db_names     = join(",", var.planit_db_names)
     bastion_ip   = module.bastion.public_ip
   }
@@ -256,16 +228,17 @@ module "secrets" {
 
   project_name          = var.project_name
   environment           = var.environment
-  k8s_namespace         = "planit-dev"
+  k8s_namespace         = "planit"
   oidc_provider_arn     = module.eks.oidc_provider_arn
   oidc_issuer           = module.eks.oidc_issuer
-  db_username           = local.db_username
-  db_password           = local.db_password
-  aws_access_key_id     = local.aws_access_key_id
-  aws_secret_access_key = local.aws_secret_access_key
-  cognito_client_secret = local.cognito_client_secret
-  jwt_secret            = local.jwt_secret
-  gnews_api_key         = local.gnews_api_key
+  db_username           = var.db_username
+  db_password           = var.db_password
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+  cognito_client_secret = var.cognito_client_secret
+  jwt_secret            = var.jwt_secret
+  gnews_api_key         = var.gnews_api_key
+
   depends_on = [module.eks]
 }
 
@@ -273,7 +246,7 @@ module "secrets" {
 resource "terraform_data" "create_databases" {
   triggers_replace = {
     rds_endpoint = module.rds.endpoint
-    db_password  = local.db_password
+    db_password  = var.db_password
   }
 
   connection {
