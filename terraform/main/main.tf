@@ -98,103 +98,9 @@ module "redis" {
 }
 
 
-# 🚨 팩트: 배스천 SSH 노가다를 대체하는 정석 리소스
-resource "helm_release" "aws_lbc" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-
-  # 🚨 set 블록을 set 리스트(map) 형태로 변경
-  set = [
-    {
-      name  = "clusterName"
-      value = module.eks.cluster_name
-    },
-    {
-      name  = "serviceAccount.create"
-      value = "true"
-    },
-    {
-      name  = "serviceAccount.name"
-      value = "aws-load-balancer-controller"
-    },
-    {
-      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-      value = module.eks.lbc_role_arn
-    },
-    {
-      name  = "region"
-      value = var.aws_region
-    },
-    {
-      name  = "vpcId"
-      value = module.network.vpc_id
-    }
-  ]
-
-  # EKS 클러스터가 완전히 떠야 설치 가능하므로 의존성 명시
-  depends_on = [module.eks]
-}
-
-resource "helm_release" "argocd" {
-  name       = "argocd"
-  namespace  = "argocd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  version    = "5.51.6"
-
-  create_namespace = true
-
-  values = [
-    <<EOF
-    server:
-      service:
-        type: LoadBalancer
-    EOF
-  ]
-}
-
-resource "terraform_data" "init_planit_databases" {
-  triggers_replace = {
-    rds_endpoint = module.rds.endpoint
-    rds_port     = tostring(module.rds.port)
-    db_user      = var.db_username
-    db_password  = var.db_password
-    db_names     = join(",", var.planit_db_names)
-    bastion_ip   = module.bastion.public_ip
-  }
-
-  connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    host        = module.bastion.public_ip
-    private_key = file("${path.root}/${var.project_name}-key.pem")
-    timeout     = "2m"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo dnf install -y mariadb105 || sudo dnf install -y mariadb",
-      <<-EOT
-        cat >/tmp/create_planit_dbs.sql <<'SQL'
-        CREATE DATABASE IF NOT EXISTS planit_insight_db;
-        CREATE DATABASE IF NOT EXISTS planit_schedule_db;
-        CREATE DATABASE IF NOT EXISTS planit_strategy_db;
-        CREATE DATABASE IF NOT EXISTS planit_user_db;
-        SQL
-
-        mysql -h ${module.rds.endpoint} -P ${module.rds.port} -u${var.db_username} -p'${var.db_password}' < /tmp/create_planit_dbs.sql
-        rm -f /tmp/create_planit_dbs.sql
-      EOT
-    ]
-  }
-
-  depends_on = [
-    module.rds,
-    module.bastion
-  ]
-}
+# ============================================
+# Helm 리소스 (Bastion을 통해 실행)
+# ============================================
 
 resource "terraform_data" "install_lbc" {
   triggers_replace = {
@@ -208,6 +114,56 @@ resource "terraform_data" "install_lbc" {
     host        = module.bastion.public_ip
     private_key = file("${path.root}/${var.project_name}-key.pem")
     timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '=== AWS Load Balancer Controller 설치 시작 ==='",
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "which helm 2>/dev/null || (curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash)",
+      "helm repo add eks https://aws.github.io/eks-charts 2>/dev/null || true",
+      "helm repo update eks",
+      "helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \\",
+      "  --set clusterName=${module.eks.cluster_name} \\",
+      "  --set serviceAccount.create=true \\",
+      "  --set serviceAccount.name=aws-load-balancer-controller \\",
+      "  --set serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${module.eks.lbc_role_arn} \\",
+      "  --set region=${var.aws_region} \\",
+      "  --set vpcId=${module.network.vpc_id} \\",
+      "  --wait --timeout 5m0s",
+      "echo '=== AWS Load Balancer Controller 설치 완료 ==='"
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion]
+}
+
+resource "terraform_data" "install_argocd" {
+  triggers_replace = {
+    cluster_name = module.eks.cluster_name
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '=== ArgoCD 설치 시작 ==='",
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+      "which helm 2>/dev/null || (curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash)",
+      "helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true",
+      "helm repo update argo",
+      "kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -",
+      "helm upgrade --install argocd argo/argo-cd --version 5.51.6 -n argocd \\",
+      "  --set server.service.type=LoadBalancer \\",
+      "  --wait --timeout 5m0s",
+      "echo '=== ArgoCD 설치 완료 ==='"
+    ]
   }
 
   depends_on = [module.eks, module.bastion]
