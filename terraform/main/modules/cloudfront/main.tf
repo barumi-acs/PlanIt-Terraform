@@ -9,6 +9,9 @@ resource "aws_cloudfront_origin_access_control" "this" {
 resource "aws_cloudfront_distribution" "this" {
   enabled = true
 
+  # 🚨 팩트: 이게 있어야 '대체 도메인 이름'에 네 주소가 떠!
+  aliases = var.aliases
+
   origin {
     domain_name = var.bucket_domain_name
     origin_id   = "s3-origin"
@@ -53,6 +56,9 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    # 🚨 팩트: 도메인을 쓰려면 AWS 인증서(ACM)가 반드시 연결되어야 해
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 }

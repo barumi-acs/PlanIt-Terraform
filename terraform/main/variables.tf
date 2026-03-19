@@ -220,8 +220,13 @@ variable "jwt_secret" {
   }
 }
 
-variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS (ALB Ingress)"
+variable "acm_certificate_arn_virginia" {
+  description = "ACM certificate ARN in us-east-1 for CloudFront"
+  type        = string
+}
+
+variable "acm_certificate_arn_seoul" {
+  description = "ACM certificate ARN in ap-northeast-2 for ALB Ingress"
   type        = string
 }
 
