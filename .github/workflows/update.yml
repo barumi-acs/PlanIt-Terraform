@@ -41,12 +41,7 @@ jobs:
           terraform -chdir=terraform/bootstrap apply -auto-approve
 
       - name: 6. Main Init & Apply
-        # 테라폼 코드의 variable "이름"과 TF_VAR_이름이 정확히 일치해야 함!
-        env:
-          TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERT_ARN }}
-          TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR || '0.0.0.0/0' }}
+        # Secrets Manager에서 모든 민감값을 가져오므로 tfvars/TF_VAR 환경변수 제거
         run: |
           terraform -chdir=terraform/main init
           terraform -chdir=terraform/main apply -auto-approve -input=false
