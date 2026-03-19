@@ -1,3 +1,12 @@
+variable "acm_certificate_arn" {
+  description = "CloudFront용 ACM 인증서 ARN"
+  type        = string
+}
+
+variable "aliases" {
+  description = "CloudFront 도메인 alias 목록"
+  type        = list(string)
+}
 variable "bucket_domain_name" {
   description = "S3 bucket domain name"
   type        = string
@@ -5,15 +14,4 @@ variable "bucket_domain_name" {
 
 variable "project_name" {
   type = string
-}
-
-variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for CloudFront"
-  type        = string
-}
-
-variable "aliases" {
-  description = "Domain aliases for CloudFront"
-  type        = list(string)
-  default     = ["barumi-planit.store"]
 }
