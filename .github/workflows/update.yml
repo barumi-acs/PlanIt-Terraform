@@ -40,8 +40,44 @@ jobs:
           terraform -chdir=terraform/bootstrap init
           terraform -chdir=terraform/bootstrap apply -auto-approve
 
+      - name: 5.1. Create terraform.tfvars from Secrets Manager
+        run: |
+          # If a repo-managed terraform.tfvars already exists, skip creation to avoid overwriting.
+          if [ -f terraform/main/terraform.tfvars ]; then
+            echo "terraform.tfvars already exists in repo — skipping SecretsManager fetch."
+            exit 0
+          fi
+          set -e
+          sudo apt-get update -y && sudo apt-get install -y jq
+          SECRET_ID="planit/dev/app-config"
+          echo "Fetching secret: $SECRET_ID"
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" --query SecretString --output text --region ap-northeast-2 || echo "{}")
+          DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.DB_PASSWORD // empty')
+          COGNITO_USER_POOL_ID=$(echo "$SECRET_JSON" | jq -r '.COGNITO_USER_POOL_ID // empty')
+          COGNITO_CLIENT_ID=$(echo "$SECRET_JSON" | jq -r '.COGNITO_CLIENT_ID // empty')
+          JWT_SECRET=$(echo "$SECRET_JSON" | jq -r '.JWT_SECRET // empty')
+          FRONTEND_BUCKET=$(echo "$SECRET_JSON" | jq -r '.FRONTEND_BUCKET_NAME // empty')
+          ACM_VAL="${{ secrets.ACM_CERT_ARN }}"
+          ADMIN_VAL="${{ secrets.ADMIN_CIDR }}"
+          if [ -z "${ADMIN_VAL}" ]; then ADMIN_VAL="0.0.0.0/0"; fi
+          mkdir -p terraform/main
+          cat > terraform/main/terraform.tfvars <<EOF
+          db_password = "${DB_PASSWORD}"
+          cognito_user_pool_id = "${COGNITO_USER_POOL_ID}"
+          cognito_client_id = "${COGNITO_CLIENT_ID}"
+          jwt_secret = "${JWT_SECRET}"
+          frontend_bucket_name = "${FRONTEND_BUCKET}"
+          acm_certificate_arn = "${ACM_VAL}"
+          admin_cidr = "${ADMIN_VAL}"
+          EOF
+
       - name: 6. Main Init & Apply
-        # Secrets Manager에서 모든 민감값을 가져오므로 tfvars/TF_VAR 환경변수 제거
+        # 테라폼 코드의 variable "이름"과 TF_VAR_이름이 정확히 일치해야 함!
+        env:
+          TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERT_ARN }}
+          TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR || '0.0.0.0/0' }}
         run: |
           terraform -chdir=terraform/main init
           terraform -chdir=terraform/main apply -auto-approve -input=false
