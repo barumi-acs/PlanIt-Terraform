@@ -1,17 +1,24 @@
+data "aws_secretsmanager_secret" "planit" {
+  name = "planit_secrets"
+}
+
+data "aws_secretsmanager_secret_version" "planit" {
+  secret_id = data.aws_secretsmanager_secret.planit.id
+}
+
 locals {
   az_2a = "${var.aws_region}a"
   az_2c = "${var.aws_region}c"
 
-  # AWS Secrets Manager에서 시크릿을 안전하게 가져와 locals로 파싱
-  # 예시: secret_name = "planit-secrets-dev"
-  planit_secrets = jsondecode(data.aws_secretsmanager_secret_version.planit_secrets.secret_string)
-  db_password            = planit_secrets["db_password"]
-  db_username            = planit_secrets["db_username"]
-  cognito_client_secret  = planit_secrets["cognito_client_secret"]
-  aws_access_key_id      = planit_secrets["aws_access_key_id"]
-  aws_secret_access_key  = planit_secrets["aws_secret_access_key"]
-  gnews_api_key          = planit_secrets["gnews_api_key"]
-  jwt_secret             = planit_secrets["jwt_secret"]
+  planit_secrets_map = jsondecode(data.aws_secretsmanager_secret_version.planit.secret_string)
+
+  db_password           = local.planit_secrets_map["db_password"]
+  db_username           = local.planit_secrets_map["db_username"]
+  cognito_client_secret = local.planit_secrets_map["cognito_client_secret"]
+  aws_access_key_id     = local.planit_secrets_map["aws_access_key_id"]
+  aws_secret_access_key = local.planit_secrets_map["aws_secret_access_key"]
+  gnews_api_key         = local.planit_secrets_map["gnews_api_key"]
+  jwt_secret            = local.planit_secrets_map["jwt_secret"]
 }
 
 module "network" {
