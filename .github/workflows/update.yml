@@ -9,17 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 1. Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 2. AWS Setup
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
       - name: 3. Terraform Setup
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: 4. Check S3 Bucket Exists
         id: check_bucket
@@ -40,23 +40,15 @@ jobs:
           terraform -chdir=terraform/bootstrap init
           terraform -chdir=terraform/bootstrap apply -auto-approve
       
-      - name: 6. Kubeconfig 생성 (EKS)
-        run: |
-          aws eks update-kubeconfig --region ap-northeast-2 --name ${{ secrets.EKS_CLUSTER_NAME }} --kubeconfig /home/runner/kubeconfig
-        
-      - name: 6.5 Create SSH Tunnel to EKS
+      - name: 6. Setup SSH Key for Bastion
         run: |
           echo "${{ secrets.BASTION_SSH_KEY }}" > bastion_key.pem
           chmod 400 bastion_key.pem
-          
-          # 깃액션의 8443 포트를 EKS 내부 IP의 443 포트로 연결
-          ssh -i bastion_key.pem -o StrictHostKeyChecking=no -N -L 8443:10.230.1.85:443 ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} &
-
-          sleep 5
+          # terraform/main 디렉토리에도 키 복사 (Terraform remote-exec용)
+          cp bastion_key.pem terraform/main/${{ secrets.PROJECT_NAME || 'planit' }}-key.pem
 
       - name: 7. Main Init & Apply
         env:
-          KUBECONFIG: /home/runner/kubeconfig
           TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           
