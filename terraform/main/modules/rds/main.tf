@@ -91,7 +91,7 @@ resource "aws_db_instance" "this" {
   backup_retention_period    = 30    # 7 → 30일 (프로덕션 권장)
   skip_final_snapshot        = false # true → false (프로덕션 필수)
   final_snapshot_identifier  = "${lower(var.project_name)}-mariadb-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-  deletion_protection        = true # false → true (프로덕션 필수)
+  deletion_protection        = false # 삭제 보호 해제 (destroy 가능)
   db_subnet_group_name       = aws_db_subnet_group.this.name
   parameter_group_name       = aws_db_parameter_group.this.name
   vpc_security_group_ids     = [var.db_security_group_id]

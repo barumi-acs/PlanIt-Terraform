@@ -1,12 +1,3 @@
-terraform {  
-  backend "s3" {
-    bucket         = "planit-team-tfstate-bucket"
-    key            = "dev/terraform.tfstate"
-    region         = "ap-northeast-2"
-    dynamodb_table = "terraform-lock"
-    encrypt        = true
-  }
-}
 
 provider "aws" {
   region = var.aws_region

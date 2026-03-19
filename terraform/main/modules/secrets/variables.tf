@@ -66,5 +66,5 @@ variable "environment" {
 variable "k8s_namespace" {
   description = "Kubernetes namespace where the ServiceAccount is created"
   type        = string
-  default     = "planit"
+  default     = "planit-dev"
 }
