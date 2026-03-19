@@ -16,7 +16,7 @@ provider "helm" {
   kubernetes = {
     config_path = "/home/runner/kubeconfig"
     host = "https://localhost:8443"
-    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    cluster_ca_certificate = base64decode(module.eks.cluster_ca_data)
     insecure = true 
 
     exec = {
