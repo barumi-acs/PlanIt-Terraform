@@ -57,7 +57,7 @@ resource "aws_cloudfront_distribution" "this" {
 
   viewer_certificate {
     # 🚨 팩트: 도메인을 쓰려면 AWS 인증서(ACM)가 반드시 연결되어야 해
-    acm_certificate_arn      = trimspace(var.acm_certificate_arn)
+    acm_certificate_arn      = trimspace(var.acm_certificate_arn_SEOUL) # 🚨 팩트: 서울 리전 인증서 ARN 사용
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }

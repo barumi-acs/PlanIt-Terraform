@@ -15,3 +15,7 @@ variable "bucket_domain_name" {
 variable "project_name" {
   type = string
 }
+variable "acm_certificate_arn_SEOUL" {
+  description = "서울 리전 ACM 인증서 ARN"
+  type        = string
+}

@@ -349,6 +349,8 @@ module "cloudfront" {
 
   bucket_domain_name  = module.s3_frontend.bucket_regional_domain_name
   project_name        = var.project_name
-  acm_certificate_arn = trimspace(var.acm_certificate_arn_virginia)
+  # 🚨 팩트: 따옴표(")가 섞여 들어가는 문제를 원천 차단
+  acm_certificate_arn = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
+  acm_certificate_arn_SEOUL = var.acm_certificate_arn_seoul
   aliases             = var.external_dns_domain_filters
 }
