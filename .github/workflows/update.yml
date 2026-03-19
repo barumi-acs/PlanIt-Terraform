@@ -43,6 +43,21 @@ jobs:
           terraform -chdir=terraform/bootstrap init
           terraform -chdir=terraform/bootstrap apply -auto-approve
 
+      - name: Write CI tfvars (prevent interactive prompts)
+        run: |
+          # Provide variable values for CI runs using repository secrets.
+          # `ACM_CERT_ARN` secret must be set in the repository settings.
+          ACM_VAL="${{ secrets.ACM_CERT_ARN }}"
+          ADMIN_VAL="${{ secrets.ADMIN_CIDR }}"
+          if [ -z "${ADMIN_VAL}" ]; then
+            ADMIN_VAL="0.0.0.0/0"
+          fi
+          mkdir -p terraform/main
+          cat > terraform/main/terraform.tfvars <<EOF
+          acm_certificate_arn = "${ACM_VAL}"
+          admin_cidr = "${ADMIN_VAL}"
+          EOF
+
       - name: Main Init & Apply
         run: |
           terraform -chdir=terraform/main init
