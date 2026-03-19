@@ -349,6 +349,6 @@ module "cloudfront" {
 
   bucket_domain_name  = module.s3_frontend.bucket_regional_domain_name
   project_name        = var.project_name
-  acm_certificate_arn = var.acm_certificate_arn_virginia
+  acm_certificate_arn = trimspace(var.acm_certificate_arn_virginia)
   aliases             = var.external_dns_domain_filters
 }
