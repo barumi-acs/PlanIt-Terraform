@@ -352,5 +352,8 @@ module "cloudfront" {
   # 🚨 팩트: 따옴표(")가 섞여 들어가는 문제를 원천 차단
   acm_certificate_arn = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
   acm_certificate_arn_SEOUL = var.acm_certificate_arn_seoul
+  providers = {
+    aws = aws.us_east_1
+  }
   aliases             = var.external_dns_domain_filters
 }

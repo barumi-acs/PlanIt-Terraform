@@ -14,6 +14,23 @@ provider "aws" {
   }
 }
 
+# CloudFront requires ACM in us-east-1; provide an aliased provider for global CloudFront resources
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  max_retries = 10
+
+  default_tags {
+    tags = merge(
+      {
+        ManagedBy = "Terraform"
+      },
+      var.common_tags
+    )
+  }
+}
+
 provider "helm" {
   kubernetes = {
     host                   = module.eks.cluster_endpoint
