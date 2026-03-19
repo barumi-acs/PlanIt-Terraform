@@ -1,0 +1,25 @@
+# Terraform local working directories
+**/.terraform/*
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform variable files (sensitive)
+*.tfvars
+*.tfvars.json
+
+# Terraform runtime artifacts
+*.tfplan
+crash.log
+crash.*.log
+
+# Local Terraform CLI config
+.terraformrc
+terraform.rc
+
+# Local environment overlays (optional)
+environments/
+
+# Generated key materials
+*.pem

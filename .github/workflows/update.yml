@@ -1,0 +1,49 @@
+name: 2. Terraform Update (Auto on Push)
+
+on:
+  push:
+    branches: [ "develop" ]
+    paths:
+      - 'terraform/**' 
+
+jobs:
+  update-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: AWS Setup
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Check S3 Bucket Exists
+        id: check_bucket
+        run: |
+          BUCKET_NAME="planit-team-tfstate-bucket"
+          REGION="ap-northeast-2"
+          # 🚨 팩트 수정 2: 에러 출력을 버리고(2>/dev/null), 비정상 종료를 막아서 if문이 정상 작동하게 만듦
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" --region "$REGION" 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ 버킷이 이미 존재합니다. Bootstrap을 건너뜁니다."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ 버킷이 없습니다. Bootstrap을 실행합니다."
+          fi
+
+      - name: Bootstrap (if needed)
+        if: steps.check_bucket.outputs.exists == 'false'
+        run: |
+          terraform -chdir=terraform/bootstrap init
+          terraform -chdir=terraform/bootstrap apply -auto-approve
+
+      - name: Main Init & Apply
+        run: |
+          terraform -chdir=terraform/main init
+          terraform -chdir=terraform/main apply -auto-approve
