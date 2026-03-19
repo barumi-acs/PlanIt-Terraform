@@ -97,6 +97,30 @@ module "redis" {
   #maintenance_window         = var.redis_maintenance_window
 }
 
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config" # CI 환경이면 환경변수나 별도 인증 필요
+  }
+}
+
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  namespace  = "argocd"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  version    = "5.51.6"
+
+  create_namespace = true
+
+  values = [
+    <<EOF
+    server:
+      service:
+        type: LoadBalancer
+    EOF
+  ]
+}
+
 resource "terraform_data" "init_planit_databases" {
   triggers_replace = {
     rds_endpoint = module.rds.endpoint
