@@ -50,6 +50,9 @@ jobs:
           TF_VAR_cognito_client_secret: ${{ secrets.COGNITO_CLIENT_SECRET }}
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_gnews_api_key: ${{ secrets.GNEWS_API_KEY }}
+
+          TF_VAR_cognito_user_pool_id: ${{ secrets.COGNITO_USER_POOL_ID }}
+          TF_VAR_cognito_client_id: ${{ secrets.COGNITO_CLIENT_ID }}
           
           TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERT_ARN }}
           TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR || '0.0.0.0/0' }}
