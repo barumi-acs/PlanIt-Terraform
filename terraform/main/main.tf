@@ -153,9 +153,25 @@ resource "terraform_data" "install_argocd" {
 
   provisioner "remote-exec" {
     inline = [
-      "echo '=== ArgoCD 설치 시작 ==='",
+      "echo '=== ArgoCD 설치 준비 시작 ==='",
+      
+      # kubectl 설치 (없을 경우)
+      "if ! command -v kubectl &> /dev/null; then",
+      "  echo 'kubectl 설치 중...'",
+      "  curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\"",
+      "  chmod +x kubectl",
+      "  sudo mv kubectl /usr/local/bin/",
+      "fi",
+
+      # helm 설치 (없을 경우)
+      "if ! command -v helm &> /dev/null; then",
+      "  echo 'helm 설치 중...'",
+      "  curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash",
+      "fi",
+
       "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
-      "which helm 2>/dev/null || (curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash)",
+      
+      "echo '=== ArgoCD 설치 시작 ==='",
       "helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true",
       "helm repo update argo",
       "kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -",

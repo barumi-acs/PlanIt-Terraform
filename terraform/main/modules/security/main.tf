@@ -190,6 +190,14 @@ resource "aws_vpc_security_group_ingress_rule" "cluster_https_from_vpc" {
   cidr_ipv4         = data.aws_vpc.selected.cidr_block
 }
 
+resource "aws_vpc_security_group_ingress_rule" "cluster_https_from_bastion" {
+  security_group_id            = aws_security_group.cluster.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  referenced_security_group_id = aws_security_group.bastion.id
+}
+
 resource "aws_vpc_security_group_ingress_rule" "cluster_icmp_from_vpc" {
   security_group_id = aws_security_group.cluster.id
   ip_protocol       = "icmp"
