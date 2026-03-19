@@ -107,7 +107,6 @@ variable "db_name" {
 variable "db_username" {
   description = "MariaDB master username"
   type        = string
-  default     = "root"
 }
 
 variable "db_password" {
