@@ -3,6 +3,9 @@ name: 3. Terraform Destroy (Manual)
 on:
   workflow_dispatch: # 팩트: 무조건 수동 클릭으로만 실행됨
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Node.js 24 강제 사용 설정 (경고 해결)
+
 jobs:
   destroy-infra:
     runs-on: ubuntu-latest

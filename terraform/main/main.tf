@@ -153,8 +153,11 @@ resource "terraform_data" "install_argocd" {
 
   provisioner "remote-exec" {
     inline = [
-      "echo '=== ArgoCD 설치 준비 시작 ==='",
+      "echo '=== ArgoCD 및 도구 설치 준비 시작 ==='",
       
+      # bash-completion 설치 (자동완성 필수 패키지)
+      "sudo dnf install -y bash-completion",
+
       # kubectl 설치 (없을 경우)
       "if ! command -v kubectl &> /dev/null; then",
       "  echo 'kubectl 설치 중...'",
@@ -162,6 +165,11 @@ resource "terraform_data" "install_argocd" {
       "  chmod +x kubectl",
       "  sudo mv kubectl /usr/local/bin/",
       "fi",
+
+      # kubectl 자동완성 설정 (영구 적용)
+      "echo 'kubectl 자동완성 설정 중...'",
+      "kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null",
+      "grep -q 'kubectl completion bash' ~/.bashrc || echo 'source <(kubectl completion bash)' >> ~/.bashrc",
 
       # helm 설치 (없을 경우)
       "if ! command -v helm &> /dev/null; then",

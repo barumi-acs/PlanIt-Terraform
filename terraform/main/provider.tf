@@ -2,6 +2,8 @@
 provider "aws" {
   region = var.aws_region
 
+  max_retries = 10 # 네트워크 불안정 시 최대 10번 재시도
+
   default_tags {
     tags = merge(
       {
