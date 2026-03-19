@@ -32,12 +32,12 @@
 #     --billing-mode PAY_PER_REQUEST \
 #     --region ap-northeast-2
 
-# terraform {
-#   backend "s3" {
-#     bucket         = "planit-terraform-state-prod"
-#     key            = "prod/terraform.tfstate"
-#     region         = "ap-northeast-2"
-#     encrypt        = true
-#     dynamodb_table = "planit-terraform-lock"
-#   }
-# }
+terraform {
+	backend "s3" {
+		bucket         = "planit-team-tfstate-bucket"
+		key            = "dev/terraform.tfstate"
+		region         = "ap-northeast-2"
+		encrypt        = true
+		dynamodb_table = "terraform-lock"
+	}
+}

@@ -1,0 +1,30 @@
+name: 3. Terraform Destroy (Manual)
+
+on:
+  workflow_dispatch: # 팩트: 무조건 수동 클릭으로만 실행됨
+
+jobs:
+  destroy-infra:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform/main
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: AWS Setup
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Init & Destroy
+        run: |
+          terraform init
+          terraform destroy -auto-approve
