@@ -1,3 +1,13 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      # 루트에서 쓰는 버전과 맞춰주는 게 좋아
+      version = "~> 5.0" 
+    }
+  }
+}
+
 resource "aws_cloudfront_origin_access_control" "this" {
   name                              = "${var.project_name}-oac"
   description                       = "OAC for frontend S3"
