@@ -8,56 +8,45 @@ jobs:
   update-infra:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 1. Checkout
         uses: actions/checkout@v3
 
-      - name: AWS Setup
+      - name: 2. AWS Setup
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
-      - name: Terraform Setup
+      - name: 3. Terraform Setup
         uses: hashicorp/setup-terraform@v2
 
-      - name: Check S3 Bucket Exists
+      - name: 4. Check S3 Bucket Exists
         id: check_bucket
         run: |
           BUCKET_NAME="planit-team-tfstate-bucket"
           REGION="ap-northeast-2"
-          # 🚨 팩트 수정 2: 에러 출력을 버리고(2>/dev/null), 비정상 종료를 막아서 if문이 정상 작동하게 만듦
           if aws s3api head-bucket --bucket "$BUCKET_NAME" --region "$REGION" 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
-            echo "✅ 버킷이 이미 존재합니다. Bootstrap을 건너뜁니다."
+            echo "✅ S3 금고 확인 완료."
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-            echo "❌ 버킷이 없습니다. Bootstrap을 실행합니다."
+            echo "❌ S3 금고 없음. 최초 생성이 필요합니다."
           fi
 
-      - name: Bootstrap (if needed)
+      - name: 5. Bootstrap (if needed)
         if: steps.check_bucket.outputs.exists == 'false'
         run: |
           terraform -chdir=terraform/bootstrap init
           terraform -chdir=terraform/bootstrap apply -auto-approve
-      
-      #시크릿 추가
-      - name: Write CI tfvars (prevent interactive prompts)
-        run: |
-          # Provide variable values for CI runs using repository secrets.
-          # `ACM_CERT_ARN` secret must be set in the repository settings.
-          ACM_VAL="${{ secrets.ACM_CERT_ARN }}"
-          ADMIN_VAL="${{ secrets.ADMIN_CIDR }}"
-          if [ -z "${ADMIN_VAL}" ]; then
-            ADMIN_VAL="0.0.0.0/0"
-          fi
-          mkdir -p terraform/main
-          cat > terraform/main/terraform.tfvars <<EOF
-          acm_certificate_arn = "${ACM_VAL}"
-          admin_cidr = "${ADMIN_VAL}"
-          EOF
 
-      - name: Main Init & Apply
+      - name: 6. Main Init & Apply
+        # 테라폼 코드의 variable "이름"과 TF_VAR_이름이 정확히 일치해야 함!
+        env:
+          TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERT_ARN }}
+          TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR || '0.0.0.0/0' }}
         run: |
           terraform -chdir=terraform/main init
-          terraform -chdir=terraform/main apply -auto-approve
+          terraform -chdir=terraform/main apply -auto-approve -input=false
