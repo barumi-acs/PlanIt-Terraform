@@ -152,7 +152,7 @@ variable "s3_bucket_name" {
 variable "dynamodb_table_name" {
   description = "DynamoDB table name"
   type        = string
-  default     = "ai_reports"
+  default     = "PI-DEV-Insight-Dynamo"
 }
 
 variable "redis_engine_version" {
