@@ -97,12 +97,6 @@ module "redis" {
   #maintenance_window         = var.redis_maintenance_window
 }
 
-provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config" # CI 환경이면 환경변수나 별도 인증 필요
-  }
-}
-
 resource "helm_release" "argocd" {
   name       = "argocd"
   namespace  = "argocd"
