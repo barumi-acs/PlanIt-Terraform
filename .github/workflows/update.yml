@@ -43,6 +43,16 @@ jobs:
       - name: 6. Kubeconfig 생성 (EKS)
         run: |
           aws eks update-kubeconfig --region ap-northeast-2 --name ${{ secrets.EKS_CLUSTER_NAME }} --kubeconfig /home/runner/kubeconfig
+        
+      - name: 6.5 Create SSH Tunnel to EKS
+        run: |
+          echo "${{ secrets.BASTION_SSH_KEY }}" > bastion_key.pem
+          chmod 400 bastion_key.pem
+          
+          # 깃액션의 8443 포트를 EKS 내부 IP의 443 포트로 연결
+          ssh -i bastion_key.pem -o StrictHostKeyChecking=no -N -L 8443:10.230.1.85:443 ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} &
+
+          sleep 5
 
       - name: 7. Main Init & Apply
         env:
