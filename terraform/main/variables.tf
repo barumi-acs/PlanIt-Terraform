@@ -241,6 +241,12 @@ variable "external_dns_domain_filters" {
   }
 }
 
+variable "route53_zone_id" {
+  description = "(Optional) Route53 hosted zone ID for the domain (if provided, skips zone lookup)"
+  type        = string
+  default     = ""
+}
+
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string

@@ -352,8 +352,26 @@ module "cloudfront" {
   # 🚨 팩트: 따옴표(")가 섞여 들어가는 문제를 원천 차단
   acm_certificate_arn = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
   acm_certificate_arn_SEOUL = var.acm_certificate_arn_seoul
-  providers = {
-    aws = aws.us_east_1
-  }
   aliases             = var.external_dns_domain_filters
+}
+
+// Route53: CloudFront Alias 레코드 생성
+data "aws_route53_zone" "selected" {
+  count        = var.route53_zone_id == "" ? 1 : 0
+  name         = element(var.external_dns_domain_filters, 0)
+  private_zone = false
+}
+
+resource "aws_route53_record" "cloudfront_alias" {
+  for_each = toset(var.external_dns_domain_filters)
+
+  zone_id = var.route53_zone_id != "" ? var.route53_zone_id : data.aws_route53_zone.selected[0].zone_id
+  name    = each.value
+  type    = "A"
+
+  alias {
+    name                   = module.cloudfront.distribution_domain_name
+    zone_id                = module.cloudfront.distribution_hosted_zone_id
+    evaluate_target_health = false
+  }
 }
