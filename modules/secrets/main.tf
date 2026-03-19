@@ -55,7 +55,7 @@ data "aws_iam_policy_document" "secrets_access" {
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret",
     ]
-    resources = [aws_secretsmanager_secret.app_config.arn]
+    resources = ["${aws_secretsmanager_secret.app_config.arn}-*"]
   }
 }
 
