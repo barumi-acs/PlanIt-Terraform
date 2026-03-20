@@ -55,64 +55,163 @@ module "eks" {
   bastion_role_arn       = module.bastion.role_arn
 }
 
+# ============================================
+# RDS 공통 리소스 (모든 RDS 인스턴스가 공유)
+# ============================================
+
+resource "aws_db_subnet_group" "shared" {
+  name       = "${lower(var.project_name)}-db-subnet-group"
+  subnet_ids = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+
+  tags = {
+    Name = "${var.project_name}-DB-GROUP"
+  }
+}
+
+resource "aws_db_parameter_group" "shared" {
+  name        = "${lower(var.project_name)}-mariadb-params"
+  family      = "mariadb${join(".", slice(split(".", var.db_engine_version), 0, 2))}"
+  description = "Shared parameter group for ${var.project_name} MariaDB instances"
+
+  parameter {
+    name         = "max_connections"
+    value        = "1000"
+    apply_method = "immediate"
+  }
+
+  # UTF-8 문자셋 설정 (한글 지원)
+  parameter {
+    name         = "character_set_server"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_client"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_connection"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_database"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "character_set_results"
+    value        = "utf8mb4"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "collation_server"
+    value        = "utf8mb4_unicode_ci"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "collation_connection"
+    value        = "utf8mb4_unicode_ci"
+    apply_method = "immediate"
+  }
+
+  # 타임존 설정 (Asia/Seoul)
+  parameter {
+    name         = "time_zone"
+    value        = "Asia/Seoul"
+    apply_method = "immediate"
+  }
+
+  tags = {
+    Name = "${var.project_name}-MariaDB-Params-Shared"
+  }
+}
+
+# ============================================
+# RDS 인스턴스 (4개)
+# ============================================
+
 # User Service RDS
 module "rds_user" {
   source = "./modules/rds"
 
-  project_name         = var.project_name
-  db_identifier_suffix = "user"
-  db_name              = "planit_user_db"
-  db_username          = var.db_username
-  db_password          = var.db_password
-  db_instance_class    = var.db_instance_class
-  db_engine_version    = var.db_engine_version
-  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
-  db_security_group_id = module.security.db_sg_id
+  project_name            = var.project_name
+  db_identifier_suffix    = "user"
+  db_name                 = "planit_user_db"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  db_instance_class       = var.db_instance_class
+  db_engine_version       = var.db_engine_version
+  db_subnet_ids           = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id    = module.security.db_sg_id
+  db_subnet_group_name    = aws_db_subnet_group.shared.name
+  db_parameter_group_name = aws_db_parameter_group.shared.name
+
+  depends_on = [aws_db_subnet_group.shared, aws_db_parameter_group.shared]
 }
 
 # Schedule Service RDS
 module "rds_schedule" {
   source = "./modules/rds"
 
-  project_name         = var.project_name
-  db_identifier_suffix = "schedule"
-  db_name              = "planit_schedule_db"
-  db_username          = var.db_username
-  db_password          = var.db_password
-  db_instance_class    = var.db_instance_class
-  db_engine_version    = var.db_engine_version
-  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
-  db_security_group_id = module.security.db_sg_id
+  project_name            = var.project_name
+  db_identifier_suffix    = "schedule"
+  db_name                 = "planit_schedule_db"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  db_instance_class       = var.db_instance_class
+  db_engine_version       = var.db_engine_version
+  db_subnet_ids           = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id    = module.security.db_sg_id
+  db_subnet_group_name    = aws_db_subnet_group.shared.name
+  db_parameter_group_name = aws_db_parameter_group.shared.name
+
+  depends_on = [aws_db_subnet_group.shared, aws_db_parameter_group.shared]
 }
 
 # Strategy Service RDS
 module "rds_strategy" {
   source = "./modules/rds"
 
-  project_name         = var.project_name
-  db_identifier_suffix = "strategy"
-  db_name              = "planit_strategy_db"
-  db_username          = var.db_username
-  db_password          = var.db_password
-  db_instance_class    = var.db_instance_class
-  db_engine_version    = var.db_engine_version
-  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
-  db_security_group_id = module.security.db_sg_id
+  project_name            = var.project_name
+  db_identifier_suffix    = "strategy"
+  db_name                 = "planit_strategy_db"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  db_instance_class       = var.db_instance_class
+  db_engine_version       = var.db_engine_version
+  db_subnet_ids           = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id    = module.security.db_sg_id
+  db_subnet_group_name    = aws_db_subnet_group.shared.name
+  db_parameter_group_name = aws_db_parameter_group.shared.name
+
+  depends_on = [aws_db_subnet_group.shared, aws_db_parameter_group.shared]
 }
 
 # Insight Service RDS
 module "rds_insight" {
   source = "./modules/rds"
 
-  project_name         = var.project_name
-  db_identifier_suffix = "insight"
-  db_name              = "planit_insight_db"
-  db_username          = var.db_username
-  db_password          = var.db_password
-  db_instance_class    = var.db_instance_class
-  db_engine_version    = var.db_engine_version
-  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
-  db_security_group_id = module.security.db_sg_id
+  project_name            = var.project_name
+  db_identifier_suffix    = "insight"
+  db_name                 = "planit_insight_db"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  db_instance_class       = var.db_instance_class
+  db_engine_version       = var.db_engine_version
+  db_subnet_ids           = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id    = module.security.db_sg_id
+  db_subnet_group_name    = aws_db_subnet_group.shared.name
+  db_parameter_group_name = aws_db_parameter_group.shared.name
+
+  depends_on = [aws_db_subnet_group.shared, aws_db_parameter_group.shared]
 }
 
 module "s3" {

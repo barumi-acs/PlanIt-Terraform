@@ -36,3 +36,13 @@ variable "db_identifier_suffix" {
   type        = string
   default     = ""
 }
+
+variable "db_subnet_group_name" {
+  description = "기존에 생성된 DB Subnet Group 이름"
+  type        = string
+}
+
+variable "db_parameter_group_name" {
+  description = "기존에 생성된 DB Parameter Group 이름"
+  type        = string
+}
