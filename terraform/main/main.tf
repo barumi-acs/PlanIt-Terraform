@@ -55,11 +55,58 @@ module "eks" {
   bastion_role_arn       = module.bastion.role_arn
 }
 
-module "rds" {
+# User Service RDS
+module "rds_user" {
   source = "./modules/rds"
 
   project_name         = var.project_name
-  db_name              = var.db_name
+  db_identifier_suffix = "user"
+  db_name              = "planit_user_db"
+  db_username          = var.db_username
+  db_password          = var.db_password
+  db_instance_class    = var.db_instance_class
+  db_engine_version    = var.db_engine_version
+  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id = module.security.db_sg_id
+}
+
+# Schedule Service RDS
+module "rds_schedule" {
+  source = "./modules/rds"
+
+  project_name         = var.project_name
+  db_identifier_suffix = "schedule"
+  db_name              = "planit_schedule_db"
+  db_username          = var.db_username
+  db_password          = var.db_password
+  db_instance_class    = var.db_instance_class
+  db_engine_version    = var.db_engine_version
+  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id = module.security.db_sg_id
+}
+
+# Strategy Service RDS
+module "rds_strategy" {
+  source = "./modules/rds"
+
+  project_name         = var.project_name
+  db_identifier_suffix = "strategy"
+  db_name              = "planit_strategy_db"
+  db_username          = var.db_username
+  db_password          = var.db_password
+  db_instance_class    = var.db_instance_class
+  db_engine_version    = var.db_engine_version
+  db_subnet_ids        = [module.network.db_private_subnet_2a_id, module.network.db_private_subnet_2c_id]
+  db_security_group_id = module.security.db_sg_id
+}
+
+# Insight Service RDS
+module "rds_insight" {
+  source = "./modules/rds"
+
+  project_name         = var.project_name
+  db_identifier_suffix = "insight"
+  db_name              = "planit_insight_db"
   db_username          = var.db_username
   db_password          = var.db_password
   db_instance_class    = var.db_instance_class
@@ -316,45 +363,6 @@ module "secrets" {
   gnews_api_key         = var.gnews_api_key
 
   depends_on = [module.eks]
-}
-
-# RDS에 4개 DB 자동 생성
-resource "terraform_data" "create_databases" {
-  triggers_replace = {
-    rds_endpoint = module.rds.endpoint
-    db_password  = var.db_password
-  }
-
-  connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    host        = module.bastion.public_ip
-    private_key = file("${path.root}/${var.project_name}-key.pem")
-    timeout     = "5m"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "echo '=== RDS에 4개 데이터베이스 생성 시작 ==='",
-
-      # MariaDB 클라이언트 설치 (없는 경우)
-      "sudo dnf install -y mariadb105 2>/dev/null || echo 'MariaDB client already installed'",
-
-      # 4개 DB 생성 (이미 존재하면 무시)
-      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_user_db;\"",
-      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_schedule_db;\"",
-      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_strategy_db;\"",
-      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"CREATE DATABASE IF NOT EXISTS planit_insight_db;\"",
-
-      # 확인
-      "echo '=== 생성된 데이터베이스 목록 ==='",
-      "mysql -h ${module.rds.endpoint} -P 3306 -u ${var.db_username} -p'${var.db_password}' -e \"SHOW DATABASES;\" | grep planit",
-
-      "echo '=== RDS 데이터베이스 생성 완료 ==='",
-    ]
-  }
-
-  depends_on = [module.rds, module.bastion]
 }
 
 # Redis CLI 자동 설치

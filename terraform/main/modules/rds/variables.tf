@@ -30,3 +30,9 @@ variable "db_subnet_ids" {
 variable "db_security_group_id" {
   type = string
 }
+
+variable "db_identifier_suffix" {
+  description = "RDS 인스턴스 식별자 접미사 (예: user, schedule, strategy, insight)"
+  type        = string
+  default     = ""
+}

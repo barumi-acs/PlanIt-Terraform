@@ -22,8 +22,28 @@ output "alb_sg_id" {
   value = module.security.alb_sg_id
 }
 
-output "rds_endpoint" {
-  value = module.rds.endpoint
+# User Service RDS
+output "rds_user_endpoint" {
+  value       = module.rds_user.endpoint
+  description = "User Service RDS endpoint"
+}
+
+# Schedule Service RDS
+output "rds_schedule_endpoint" {
+  value       = module.rds_schedule.endpoint
+  description = "Schedule Service RDS endpoint"
+}
+
+# Strategy Service RDS
+output "rds_strategy_endpoint" {
+  value       = module.rds_strategy.endpoint
+  description = "Strategy Service RDS endpoint"
+}
+
+# Insight Service RDS
+output "rds_insight_endpoint" {
+  value       = module.rds_insight.endpoint
+  description = "Insight Service RDS endpoint"
 }
 
 output "s3_bucket_name" {

@@ -74,7 +74,7 @@ resource "aws_db_parameter_group" "this" {
 }
 
 resource "aws_db_instance" "this" {
-  identifier                 = "${lower(var.project_name)}-mariadb"
+  identifier                 = var.db_identifier_suffix != "" ? "${lower(var.project_name)}-mariadb-${var.db_identifier_suffix}" : "${lower(var.project_name)}-mariadb"
   engine                     = "mariadb"
   engine_version             = var.db_engine_version
   instance_class             = var.db_instance_class
