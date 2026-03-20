@@ -138,6 +138,55 @@ resource "terraform_data" "install_lbc" {
   depends_on = [module.eks, module.bastion]
 }
 
+# ============================================
+# Secrets Store CSI Driver 설치
+# ============================================
+resource "terraform_data" "install_csi_driver" {
+  triggers_replace = {
+    cluster_name = module.eks.cluster_name
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    host        = module.bastion.public_ip
+    private_key = file("${path.root}/${var.project_name}-key.pem")
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '=== Secrets Store CSI Driver 설치 시작 ==='",
+      "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
+
+      # Helm 레포지토리 추가
+      "echo '=== Helm 레포지토리 추가 ==='",
+      "helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts 2>/dev/null || true",
+      "helm repo add aws-secrets-manager https://aws.github.io/secrets-store-csi-driver-provider-aws 2>/dev/null || true",
+      "helm repo update",
+
+      # CSI Driver 설치 (Secret 동기화 옵션 포함)
+      "echo '=== CSI Driver 설치 (Secret 동기화 활성화) ==='",
+      "helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \\",
+      "  --namespace kube-system \\",
+      "  --set syncSecret.enabled=true \\",
+      "  --set enableSecretRotation=true \\",
+      "  --wait --timeout 5m0s",
+
+      # AWS Secrets Manager Provider 설치
+      "echo '=== AWS Secrets Manager Provider 설치 ==='",
+      "helm upgrade --install secrets-provider-aws aws-secrets-manager/secrets-store-csi-driver-provider-aws \\",
+      "  --namespace kube-system \\",
+      "  --wait --timeout 5m0s",
+
+      "echo '=== Secrets Store CSI Driver 설치 완료 ==='",
+      "kubectl get pods -n kube-system | grep csi"
+    ]
+  }
+
+  depends_on = [module.eks, module.bastion, terraform_data.install_lbc]
+}
+
 resource "terraform_data" "install_argocd" {
   triggers_replace = {
     cluster_name = module.eks.cluster_name
@@ -154,7 +203,7 @@ resource "terraform_data" "install_argocd" {
   provisioner "remote-exec" {
     inline = [
       "echo '=== ArgoCD 및 도구 설치 준비 시작 ==='",
-      
+
       # bash-completion 설치 (자동완성 필수 패키지)
       "sudo dnf install -y bash-completion",
 
@@ -178,7 +227,7 @@ resource "terraform_data" "install_argocd" {
       "fi",
 
       "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}",
-      
+
       "echo '=== ArgoCD 설치 시작 ==='",
       "helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true",
       "helm repo update argo",
@@ -347,12 +396,12 @@ module "s3_frontend" {
 module "cloudfront" {
   source = "./modules/cloudfront"
 
-  bucket_domain_name  = module.s3_frontend.bucket_regional_domain_name
-  project_name        = var.project_name
+  bucket_domain_name = module.s3_frontend.bucket_regional_domain_name
+  project_name       = var.project_name
   # 🚨 팩트: 따옴표(")가 섞여 들어가는 문제를 원천 차단
-  acm_certificate_arn = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
+  acm_certificate_arn       = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
   acm_certificate_arn_SEOUL = var.acm_certificate_arn_seoul
-  aliases             = var.external_dns_domain_filters
+  aliases                   = var.external_dns_domain_filters
 }
 
 // Route53: CloudFront Alias 레코드 생성
