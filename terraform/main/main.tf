@@ -228,6 +228,26 @@ module "dynamodb" {
   table_name   = var.dynamodb_table_name
 }
 
+# ============================================
+# VPC Endpoints (DynamoDB Gateway Endpoint)
+# ============================================
+module "vpc_endpoints" {
+  source = "./modules/vpc_endpoints"
+
+  project_name        = var.project_name
+  vpc_id              = module.network.vpc_id
+  aws_region          = var.aws_region
+  dynamodb_table_name = var.dynamodb_table_name
+  environment         = var.environment
+
+  # EKS Private Subnet의 Route Table에 DynamoDB 라우팅 자동 추가
+  route_table_ids = [
+    module.network.private_route_table_id
+  ]
+
+  depends_on = [module.network, module.dynamodb]
+}
+
 module "redis" {
   source = "./modules/redis"
 
