@@ -44,6 +44,33 @@ resource "aws_iam_role_policy" "bastion_eks_access" {
   })
 }
 
+resource "aws_iam_role_policy" "bastion_secrets_access" {
+  name = "${var.project_name}-Bastion-Secrets-Access"
+  role = aws_iam_role.bastion.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:*:*:secret:planit/dev/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:DescribeDBSnapshots"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project_name}-Bastion-Profile"
   role = aws_iam_role.bastion.name
