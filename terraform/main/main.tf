@@ -71,7 +71,7 @@ resource "aws_db_subnet_group" "shared" {
 resource "aws_db_parameter_group" "shared" {
   name        = "${lower(var.project_name)}-mariadb-params"
   family      = "mariadb${join(".", slice(split(".", var.db_engine_version), 0, 2))}"
-  description = "Shared parameter group for ${var.project_name} MariaDB instances"
+  description = "Custom parameter group for ${var.project_name} MariaDB"
 
   parameter {
     name         = "max_connections"
@@ -130,7 +130,7 @@ resource "aws_db_parameter_group" "shared" {
   }
 
   tags = {
-    Name = "${var.project_name}-MariaDB-Params-Shared"
+    Name = "${var.project_name}-MariaDB-Params"
   }
 }
 
