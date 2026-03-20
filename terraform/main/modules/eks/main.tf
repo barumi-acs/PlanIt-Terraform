@@ -368,6 +368,7 @@ data "aws_iam_policy_document" "lbc" {
       "elasticloadbalancing:DeleteListener",
       "elasticloadbalancing:CreateRule",
       "elasticloadbalancing:DeleteRule",
+      "elasticloadbalancing:SetRulePriorities",
     ]
     resources = ["*"]
   }
