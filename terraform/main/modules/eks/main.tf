@@ -626,3 +626,72 @@ resource "aws_iam_role_policy_attachment" "cognito_access" {
   role       = aws_iam_role.app_services.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonCognitoPowerUser"
 }
+
+# ──────────────────────────────────────────────────────────
+# IRSA for Loki (Observability)
+# S3 Access for Log Storage
+# ──────────────────────────────────────────────────────────
+
+data "aws_iam_policy_document" "loki_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:sub"
+      values   = ["system:serviceaccount:monitoring:loki"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "loki_s3" {
+  statement {
+    sid    = "AllowLokiS3Access"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      var.loki_bucket_arn,
+      "${var.loki_bucket_arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "loki" {
+  name   = "${var.project_name}-Loki-Policy"
+  policy = data.aws_iam_policy_document.loki_s3.json
+
+  tags = {
+    Name = "${var.project_name}-Loki-Policy"
+  }
+}
+
+resource "aws_iam_role" "loki" {
+  name               = "${var.project_name}-Loki-Role"
+  assume_role_policy = data.aws_iam_policy_document.loki_assume_role.json
+
+  tags = {
+    Name = "${var.project_name}-Loki-Role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "loki" {
+  role       = aws_iam_role.loki.name
+  policy_arn = aws_iam_policy.loki.arn
+}

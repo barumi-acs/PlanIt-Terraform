@@ -54,3 +54,9 @@ variable "key_name" {
 variable "bastion_role_arn" {
   type = string
 }
+
+variable "loki_bucket_arn" {
+  description = "Loki S3 버킷 ARN"
+  type        = string
+  default     = ""
+}

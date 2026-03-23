@@ -266,3 +266,62 @@ variable "frontend_bucket_name" {
   description = "S3 bucket name for frontend static files"
   type        = string
 }
+
+
+# ============================================
+# Observability Variables
+# ============================================
+
+variable "loki_bucket_name" {
+  description = "S3 bucket name for Loki log storage"
+  type        = string
+  default     = "barumi-loki-dev"
+}
+
+variable "loki_retention_days" {
+  description = "Loki log retention period in days"
+  type        = number
+  default     = 90
+}
+
+variable "slack_webhook_critical" {
+  description = "Slack Webhook URL for critical alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_webhook_user" {
+  description = "Slack Webhook URL for user service alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_webhook_schedule" {
+  description = "Slack Webhook URL for schedule service alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_webhook_strategy" {
+  description = "Slack Webhook URL for strategy service alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_webhook_insight" {
+  description = "Slack Webhook URL for insight service alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_webhook_insightai" {
+  description = "Slack Webhook URL for insightai service alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "billing_threshold" {
+  description = "CloudWatch Billing Alarm threshold in USD"
+  type        = number
+  default     = 100
+}

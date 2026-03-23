@@ -36,3 +36,8 @@ output "oidc_issuer" {
   description = "EKS OIDC issuer URL (without https://) for IRSA"
   value       = local.oidc_issuer
 }
+
+output "loki_role_arn" {
+  description = "IAM Role ARN for Loki to access S3"
+  value       = aws_iam_role.loki.arn
+}

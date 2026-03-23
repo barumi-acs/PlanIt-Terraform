@@ -36,6 +36,18 @@ module "bastion" {
   bastion_security_group_id = module.security.bastion_sg_id
 }
 
+# ============================================
+# S3 Bucket for Loki (Observability)
+# ============================================
+module "s3_loki" {
+  source = "./modules/s3_loki"
+
+  project_name   = var.project_name
+  environment    = var.environment
+  bucket_name    = var.loki_bucket_name
+  retention_days = var.loki_retention_days
+}
+
 module "eks" {
   source = "./modules/eks"
 
@@ -53,6 +65,7 @@ module "eks" {
   node_max_size          = var.node_max_size
   key_name               = module.bastion.key_name
   bastion_role_arn       = module.bastion.role_arn
+  loki_bucket_arn        = module.s3_loki.bucket_arn
 }
 
 # ============================================
@@ -529,6 +542,23 @@ module "cloudfront" {
   acm_certificate_arn       = replace(trimspace(var.acm_certificate_arn_virginia), "\"", "")
   acm_certificate_arn_SEOUL = var.acm_certificate_arn_seoul
   aliases                   = var.external_dns_domain_filters
+}
+
+# ============================================
+# Monitoring (SNS + Lambda + CloudWatch Billing Alarm)
+# ============================================
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name            = var.project_name
+  environment             = var.environment
+  slack_webhook_critical  = var.slack_webhook_critical
+  slack_webhook_user      = var.slack_webhook_user
+  slack_webhook_schedule  = var.slack_webhook_schedule
+  slack_webhook_strategy  = var.slack_webhook_strategy
+  slack_webhook_insight   = var.slack_webhook_insight
+  slack_webhook_insightai = var.slack_webhook_insightai
+  billing_threshold       = var.billing_threshold
 }
 
 // Route53: CloudFront Alias 레코드 생성
