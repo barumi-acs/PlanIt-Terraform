@@ -695,3 +695,69 @@ resource "aws_iam_role_policy_attachment" "loki" {
   role       = aws_iam_role.loki.name
   policy_arn = aws_iam_policy.loki.arn
 }
+
+# ──────────────────────────────────────────────────────────
+# IRSA for EBS CSI Driver
+# EBS Volume Management
+# ──────────────────────────────────────────────────────────
+
+data "aws_iam_policy_document" "ebs_csi_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:sub"
+      values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "ebs_csi" {
+  name               = "${var.project_name}-EBS-CSI-Role"
+  assume_role_policy = data.aws_iam_policy_document.ebs_csi_assume_role.json
+
+  tags = {
+    Name = "${var.project_name}-EBS-CSI-Role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi" {
+  role       = aws_iam_role.ebs_csi.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+# ──────────────────────────────────────────────────────────
+# EKS Addon: EBS CSI Driver
+# ──────────────────────────────────────────────────────────
+
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name             = aws_eks_cluster.this.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = "v1.37.0-eksbuild.1"
+  service_account_role_arn = aws_iam_role.ebs_csi.arn
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [
+    aws_eks_node_group.this,
+    aws_iam_role_policy_attachment.ebs_csi
+  ]
+
+  tags = {
+    Name = "${var.project_name}-EBS-CSI-Addon"
+  }
+}

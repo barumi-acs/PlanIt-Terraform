@@ -41,3 +41,8 @@ output "loki_role_arn" {
   description = "IAM Role ARN for Loki to access S3"
   value       = aws_iam_role.loki.arn
 }
+
+output "ebs_csi_role_arn" {
+  description = "IAM Role ARN for EBS CSI Driver"
+  value       = aws_iam_role.ebs_csi.arn
+}
