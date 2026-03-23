@@ -77,3 +77,41 @@ output "secrets_secret_name" {
   description = "AWS Secrets Manager secret name"
   value       = module.secrets.secret_name
 }
+
+# ============================================
+# Monitoring (SNS Topics for Grafana)
+# ============================================
+output "sns_topic_critical_arn" {
+  description = "SNS Topic ARN for critical alerts"
+  value       = module.monitoring.sns_topic_critical_arn
+}
+
+output "sns_topic_user_arn" {
+  description = "SNS Topic ARN for user service alerts"
+  value       = module.monitoring.sns_topic_user_arn
+}
+
+output "sns_topic_schedule_arn" {
+  description = "SNS Topic ARN for schedule service alerts"
+  value       = module.monitoring.sns_topic_schedule_arn
+}
+
+output "sns_topic_strategy_arn" {
+  description = "SNS Topic ARN for strategy service alerts"
+  value       = module.monitoring.sns_topic_strategy_arn
+}
+
+output "sns_topic_insight_arn" {
+  description = "SNS Topic ARN for insight service alerts"
+  value       = module.monitoring.sns_topic_insight_arn
+}
+
+output "sns_topic_insightai_arn" {
+  description = "SNS Topic ARN for insightai service alerts"
+  value       = module.monitoring.sns_topic_insightai_arn
+}
+
+output "lambda_function_name" {
+  description = "Lambda Function name for Slack forwarding"
+  value       = module.monitoring.lambda_function_name
+}
