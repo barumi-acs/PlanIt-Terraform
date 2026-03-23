@@ -70,6 +70,14 @@ jobs:
           
           TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR || '0.0.0.0/0' }}
           TF_VAR_frontend_bucket_name: ${{ secrets.S3_BUCKET_FE }}
+          
+          # Slack Webhook URLs (하이브리드 알림 방식)
+          TF_VAR_slack_webhook_critical: ${{ secrets.SLACK_WEBHOOK_CRITICAL }}
+          TF_VAR_slack_webhook_user: ${{ secrets.SLACK_WEBHOOK_USER }}
+          TF_VAR_slack_webhook_schedule: ${{ secrets.SLACK_WEBHOOK_SCHEDULE }}
+          TF_VAR_slack_webhook_strategy: ${{ secrets.SLACK_WEBHOOK_STRATEGY }}
+          TF_VAR_slack_webhook_insight: ${{ secrets.SLACK_WEBHOOK_INSIGHT }}
+          TF_VAR_slack_webhook_insightai: ${{ secrets.SLACK_WEBHOOK_INSIGHTAI }}
         run: |
           terraform -chdir=terraform/main init
           terraform -chdir=terraform/main apply -auto-approve -input=false
