@@ -698,7 +698,7 @@ resource "aws_iam_role_policy_attachment" "loki" {
 
 # ──────────────────────────────────────────────────────────
 # IRSA for EBS CSI Driver
-# EBS Volume Management
+# EBS Volume Management (수동 설치된 EBS CSI Driver용)
 # ──────────────────────────────────────────────────────────
 
 data "aws_iam_policy_document" "ebs_csi_assume_role" {
@@ -739,25 +739,5 @@ resource "aws_iam_role_policy_attachment" "ebs_csi" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
 
-# ──────────────────────────────────────────────────────────
-# EKS Addon: EBS CSI Driver
-# ──────────────────────────────────────────────────────────
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = aws_eks_cluster.this.name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.37.0-eksbuild.1"
-  service_account_role_arn = aws_iam_role.ebs_csi.arn
 
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
-
-  depends_on = [
-    aws_eks_node_group.this,
-    aws_iam_role_policy_attachment.ebs_csi
-  ]
-
-  tags = {
-    Name = "${var.project_name}-EBS-CSI-Addon"
-  }
-}
