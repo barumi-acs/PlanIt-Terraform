@@ -66,6 +66,16 @@ module "eks" {
   key_name               = module.bastion.key_name
   bastion_role_arn       = module.bastion.role_arn
   loki_bucket_arn        = module.s3_loki.bucket_arn
+  sns_topic_arns = [
+    module.monitoring.sns_topic_critical_arn,
+    module.monitoring.sns_topic_user_arn,
+    module.monitoring.sns_topic_schedule_arn,
+    module.monitoring.sns_topic_strategy_arn,
+    module.monitoring.sns_topic_insight_arn,
+    module.monitoring.sns_topic_insightai_arn
+  ]
+
+  depends_on = [module.monitoring]
 }
 
 # ============================================

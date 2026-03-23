@@ -115,3 +115,11 @@ output "lambda_function_name" {
   description = "Lambda Function name for Slack forwarding"
   value       = module.monitoring.lambda_function_name
 }
+
+# ============================================
+# Grafana IRSA Role ARN
+# ============================================
+output "grafana_role_arn" {
+  description = "IAM Role ARN for Grafana to publish SNS alerts (IRSA)"
+  value       = module.eks.grafana_role_arn
+}

@@ -37,3 +37,15 @@ output "lambda_function_name" {
   description = "Lambda Function name"
   value       = aws_lambda_function.slack_forwarder.function_name
 }
+
+output "all_sns_topic_arns" {
+  description = "All SNS Topic ARNs for Grafana IRSA"
+  value = [
+    aws_sns_topic.alert_critical.arn,
+    aws_sns_topic.alert_user.arn,
+    aws_sns_topic.alert_schedule.arn,
+    aws_sns_topic.alert_strategy.arn,
+    aws_sns_topic.alert_insight.arn,
+    aws_sns_topic.alert_insightai.arn
+  ]
+}

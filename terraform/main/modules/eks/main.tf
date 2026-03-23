@@ -739,5 +739,68 @@ resource "aws_iam_role_policy_attachment" "ebs_csi" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
 
+# ──────────────────────────────────────────────────────────
+# IRSA for Grafana (Observability)
+# SNS Publish Access for Alerting
+# ──────────────────────────────────────────────────────────
+
+data "aws_iam_policy_document" "grafana_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:sub"
+      values   = ["system:serviceaccount:monitoring:monitoring-grafana"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "grafana_sns" {
+  statement {
+    sid    = "AllowGrafanaSNSPublish"
+    effect = "Allow"
+    actions = [
+      "sns:Publish"
+    ]
+    resources = var.sns_topic_arns
+  }
+}
+
+resource "aws_iam_policy" "grafana" {
+  name   = "${var.project_name}-Grafana-Policy"
+  policy = data.aws_iam_policy_document.grafana_sns.json
+
+  tags = {
+    Name = "${var.project_name}-Grafana-Policy"
+  }
+}
+
+resource "aws_iam_role" "grafana" {
+  name               = "${var.project_name}-Grafana-Role"
+  assume_role_policy = data.aws_iam_policy_document.grafana_assume_role.json
+
+  tags = {
+    Name = "${var.project_name}-Grafana-Role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "grafana" {
+  role       = aws_iam_role.grafana.name
+  policy_arn = aws_iam_policy.grafana.arn
+}
+
 
 

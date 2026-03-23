@@ -60,3 +60,9 @@ variable "loki_bucket_arn" {
   type        = string
   default     = ""
 }
+
+variable "sns_topic_arns" {
+  description = "Grafana가 알림을 보낼 SNS Topic ARN 리스트"
+  type        = list(string)
+  default     = []
+}

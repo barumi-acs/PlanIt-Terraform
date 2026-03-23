@@ -46,3 +46,8 @@ output "ebs_csi_role_arn" {
   description = "IAM Role ARN for EBS CSI Driver"
   value       = aws_iam_role.ebs_csi.arn
 }
+
+output "grafana_role_arn" {
+  description = "IAM Role ARN for Grafana to publish SNS alerts"
+  value       = aws_iam_role.grafana.arn
+}
