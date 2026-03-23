@@ -77,13 +77,13 @@ variable "admin_cidr" {
 variable "node_instance_types" {
   description = "EKS node instance types"
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["t3.large"]
 }
 
 variable "node_desired_size" {
   description = "Desired EKS node count"
   type        = number
-  default     = 3
+  default     = 5
 }
 
 variable "node_min_size" {
@@ -95,7 +95,7 @@ variable "node_min_size" {
 variable "node_max_size" {
   description = "Maximum EKS node count"
   type        = number
-  default     = 3
+  default     = 6
 }
 
 variable "db_name" {
