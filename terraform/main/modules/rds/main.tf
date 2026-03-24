@@ -20,7 +20,7 @@ resource "aws_db_instance" "this" {
   db_subnet_group_name       = var.db_subnet_group_name
   parameter_group_name       = var.db_parameter_group_name
   vpc_security_group_ids     = [var.db_security_group_id]
-  auto_minor_version_upgrade = true
+  auto_minor_version_upgrade = false
 
   tags = {
     Name = var.db_identifier_suffix != "" ? "${var.project_name}-MariaDB-${upper(var.db_identifier_suffix)}" : "${var.project_name}-MariaDB"
