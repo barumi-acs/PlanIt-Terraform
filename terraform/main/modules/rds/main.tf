@@ -1,7 +1,7 @@
 resource "aws_db_instance" "this" {
   identifier                 = var.db_identifier_suffix != "" ? "${lower(var.project_name)}-mariadb-${var.db_identifier_suffix}" : "${lower(var.project_name)}-mariadb"
   engine                     = "mariadb"
-  engine_version             = var.db_engine_version
+  engine_version             = "10.11.15"
   instance_class             = var.db_instance_class
   allocated_storage          = 20
   max_allocated_storage      = 100
